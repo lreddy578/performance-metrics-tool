@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Performance Metrics</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;color:#172b4d}
+
+    .header{background:#0052cc;color:#fff;padding:14px 24px;
+            display:flex;justify-content:space-between;align-items:center;
+            flex-wrap:wrap;gap:8px}
+    .header h1{font-size:18px;font-weight:600}
+    .hright{display:flex;gap:10px;align-items:center;font-size:13px;
+            flex-wrap:wrap}
+    .badge{background:rgba(255,255,255,.2);padding:3px 12px;
+           border-radius:20px}
+
+    .btn{padding:6px 14px;border-radius:4px;cursor:pointer;
+         border:none;font-size:13px;font-weight:500;transition:opacity .15s}
+    .btn-ghost{background:rgba(255,255,255,.15);color:#fff;
+               border:1px solid rgba(255,255,255,.3)}
+    .btn-blue{background:#0052cc;color:#fff}
+    .btn-blue:hover{background:#0065ff}
+    .btn-blue:disabled{background:#a5adba;cursor:not-allowed}
+    .btn-purple{background:#6554c0;color:#fff}
+
+    .container{max-width:1100px;margin:24px auto;padding:0 16px}
+    .controls{display:flex;gap:12px;align-items:center;
+              margin-bottom:20px;flex-wrap:wrap}
+    .controls select{padding:8px 12px;border:1px solid #dfe1e6;
+                     border-radius:4px;font-size:14px}
+
+    .scores{display:grid;grid-template-columns:repeat(3,1fr);
+            gap:16px;margin-bottom:24px}
+    .score-card{background:#fff;border-radius:8px;padding:20px;
+                text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .score-val{font-size:30px;font-weight:700;color:#0052cc}
+    .score-lbl{font-size:12px;color:#6b778c;margin-top:4px}
+
+    .tab-nav{display:flex;border-bottom:2px solid #dfe1e6;margin-bottom:20px}
+    .tab-btn{padding:10px 28px;border:none;background:none;cursor:pointer;
+             font-size:14px;font-weight:500;color:#6b778c;
+             border-bottom:3px solid transparent;margin-bottom:-2px;
+             transition:color .15s,border-color .15s}
+    .tab-btn:hover{color:#0052cc}
+    .tab-btn.active{color:#0052cc;border-bottom-color:#0052cc;
+                    background:#fff;border-radius:4px 4px 0 0}
+    .tab-pane{display:none}
+    .tab-pane.active{display:block}
+
+    .section{background:#fff;border-radius:8px;padding:20px;
+             margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .sec-title{font-size:15px;font-weight:600;margin-bottom:16px;
+               display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .tag{font-size:11px;padding:2px 8px;border-radius:10px}
+    .tag-green {background:#e3fcef;color:#006644}
+    .tag-yellow{background:#fffae6;color:#974f0c}
+    .tag-blue  {background:#deebff;color:#0052cc}
+
+    .tbl-head{display:grid;
+              grid-template-columns:2.5fr 1fr 1fr 1fr 2fr;
+              gap:8px;padding:8px 0;font-size:11px;font-weight:700;
+              color:#6b778c;text-transform:uppercase;
+              border-bottom:2px solid #dfe1e6}
+    .tbl-row{display:grid;
+             grid-template-columns:2.5fr 1fr 1fr 1fr 2fr;
+             gap:8px;align-items:center;padding:10px 0 4px 0;
+             font-size:13px}
+    .center{text-align:center}
+    .wt-pos{color:#006644;font-weight:600;text-align:center}
+    .wt-neg{color:#bf2600;font-weight:600;text-align:center}
+
+    .prog{display:flex;align-items:center;gap:6px}
+    .prog-bar{flex:1;height:8px;background:#dfe1e6;
+              border-radius:4px;overflow:hidden}
+    .prog-fill{height:100%;border-radius:4px;transition:width .4s}
+    .fill-g{background:#36b37e}
+    .fill-w{background:#ff8b00}
+    .fill-b{background:#de350b}
+    .prog-pct{font-size:11px;color:#6b778c;min-width:32px}
+
+    .num-input{width:72px;padding:5px 8px;border:1px solid #dfe1e6;
+               border-radius:4px;font-size:13px;text-align:center}
+    .num-input:focus{outline:none;border-color:#0052cc;
+                     box-shadow:0 0 0 2px rgba(0,82,204,.12)}
+
+    /* Comment row — only shown in Manual + Tab 2 sections */
+    .metric-block{border-bottom:1px solid #f4f5f7;padding-bottom:4px}
+    .metric-block:last-child{border-bottom:none}
+    .comment-row{padding:2px 0 10px 0;display:flex;
+                 align-items:flex-start;gap:6px}
+    .comment-icon{font-size:12px;color:#a5adba;padding-top:8px;
+                  flex-shrink:0}
+    .comment-input{flex:1;min-height:52px;padding:7px 10px;
+                   border:1px solid #dfe1e6;border-radius:4px;
+                   font-size:12px;font-family:inherit;resize:vertical;
+                   color:#172b4d;background:#fafbfc;line-height:1.5}
+    .comment-input:focus{outline:none;border-color:#0052cc;background:#fff;
+                         box-shadow:0 0 0 2px rgba(0,82,204,.1)}
+    .comment-input::placeholder{color:#c1c7d0}
+
+    .save-row{margin-top:14px;display:flex;align-items:center;
+              gap:12px;flex-wrap:wrap}
+    .status-msg{font-size:13px;padding:8px 14px;border-radius:4px;
+                display:none}
+    .st-ok {background:#e3fcef;color:#006644;display:block}
+    .st-err{background:#ffebe6;color:#bf2600;display:block}
+
+    .loading{text-align:center;padding:20px;color:#6b778c}
+    .sync-error{color:#bf2600;padding:12px;background:#ffebe6;
+                border-radius:4px;font-size:13px}
+    .info-banner{background:#deebff;color:#0052cc;padding:10px 14px;
+                 border-radius:6px;font-size:13px;margin-bottom:16px;
+                 border-left:4px solid #0052cc}
+
+    @media(max-width:640px){
+      .tbl-head,.tbl-row{grid-template-columns:1fr 1fr;font-size:12px}
+      .scores{grid-template-columns:1fr}
+      .tab-btn{padding:8px 14px;font-size:13px}
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 My Performance Metrics</h1>
+  <div class="hright">
+    <span id="uName">…</span>
+    <span class="badge" id="uRole">…</span>
+    <span id="managerBtn"></span>
+    <button class="btn btn-ghost" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="controls">
+    <strong>Year:</strong>
+    <select id="yr" onchange="loadMetrics()">
+      <option value="2026">2026</option>
+      <option value="2025" selected>2025</option>
+      <option value="2024">2024</option>
+    </select>
+    <button class="btn btn-blue" onclick="loadMetrics()">🔄 Refresh</button>
+  </div>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-val" id="sScore">—</div>
+      <div class="score-lbl">Weighted Score</div>
+    </div>
+    <div class="score-card">
+      <div class="score-val" id="sEntered">—</div>
+      <div class="score-lbl">Metrics Entered</div>
+    </div>
+    <div class="score-card">
+      <div class="score-val" id="sTotal">—</div>
+      <div class="score-lbl">Total Metrics</div>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" id="btnTab1" onclick="switchTab(1)">
+      📊 Live Dashboard
+    </button>
+    <button class="tab-btn" id="btnTab2" onclick="switchTab(2)">
+      ✏️ Manual Entry
+    </button>
+  </div>
+
+  <!-- ══ TAB 1 ══ -->
+  <div id="tab1" class="tab-pane active">
+
+    <!-- Jira section — values read-only, NO comment boxes -->
+    <div class="section">
+      <div class="sec-title">
+        🔗 Jira Metrics
+        <span class="tag tag-green">Auto from Jira</span>
+        <button class="btn btn-blue" id="syncBtn" onclick="syncJira()"
+                style="margin-left:auto;font-size:12px;padding:5px 14px">
+          🔄 Sync from Jira
+        </button>
+      </div>
+      <div id="jiraBox">
+        <div class="loading">
+          Click <strong>🔄 Sync from Jira</strong> to load your metrics.
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual section — values + comments editable -->
+    <div class="section">
+      <div class="sec-title">
+        ✏️ Manual Metrics
+        <span class="tag tag-yellow">Enter Manually</span>
+      </div>
+      <div id="manualBox"><div class="loading">Loading…</div></div>
+      <div class="save-row">
+        <button class="btn btn-blue" onclick="saveTab1Manual()">
+          💾 Save Metrics
+        </button>
+        <div class="status-msg" id="msgTab1"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ TAB 2 ══ -->
+  <div id="tab2" class="tab-pane">
+    <div class="section">
+      <div class="sec-title">
+        📝 All Metrics — Manual Entry
+        <span class="tag tag-blue">All 7 Metrics</span>
+      </div>
+      <div class="info-banner">
+        💡 Enter values and comments for all metrics here.
+           Values saved here will also update the Live Dashboard.
+      </div>
+      <div id="allMetricsBox"><div class="loading">Loading…</div></div>
+      <div class="save-row">
+        <button class="btn btn-blue" onclick="saveTab2()">
+          💾 Save All Metrics
+        </button>
+        <div class="status-msg" id="msgTab2"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+  if (!token) location.href = '/';
+
+  let metrics = [];
+
+  function switchTab(n) {
+    document.getElementById('tab1').classList.toggle('active', n === 1);
+    document.getElementById('tab2').classList.toggle('active', n === 2);
+    document.getElementById('btnTab1').classList.toggle('active', n === 1);
+    document.getElementById('btnTab2').classList.toggle('active', n === 2);
+  }
+
+  async function api(url, opts = {}) {
+    const r = await fetch(url, {
+      ...opts,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type':  'application/json',
+        ...(opts.headers || {}),
+      },
+    });
+    if (r.status === 401) {
+      localStorage.removeItem('token');
+      location.href = '/';
+    }
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || `Server error ${r.status}`);
+    return data;
+  }
+
+  async function init() {
+    try {
+      const me = await api('/auth/me');
+      document.getElementById('uName').textContent =
+        me.display_name || me.email;
+      document.getElementById('uRole').textContent = me.role;
+      if (me.is_manager) {
+        document.getElementById('managerBtn').innerHTML =
+          '<button class="btn btn-purple" '
+          + 'onclick="location.href=\'/manager\'">👥 Team View</button>';
+      }
+      await loadMetrics();
+    } catch (err) {
+      console.error('Init error:', err.message);
+    }
+  }
+
+  async function loadMetrics() {
+    const yr = document.getElementById('yr').value;
+    try {
+      metrics = await api('/api/metrics/my?year=' + yr);
+      render();
+    } catch (err) {
+      console.error('Load error:', err.message);
+    }
+  }
+
+  async function syncJira() {
+    const yr  = document.getElementById('yr').value;
+    const btn = document.getElementById('syncBtn');
+    const box = document.getElementById('jiraBox');
+
+    btn.disabled    = true;
+    btn.textContent = '⏳ Syncing…';
+    box.innerHTML   =
+      '<div class="loading">⏳ Fetching your issues from Jira…</div>';
+
+    try {
+      const resp = await api(
+        '/api/jira/sync-metrics?year=' + yr,
+        { method: 'POST' }
+      );
+      if (resp.success) {
+        await loadMetrics();
+        const msg = document.getElementById('msgTab1');
+        msg.className   = 'status-msg st-ok';
+        msg.textContent =
+          `✅ Synced! Found ${resp.issues_found} Jira issues for ${yr}.`;
+        setTimeout(() => { msg.className = 'status-msg'; }, 5000);
+      }
+    } catch (err) {
+      box.innerHTML =
+        `<div class="sync-error">❌ <strong>Sync failed:</strong> `
+        + `${err.message}</div>`;
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '🔄 Sync from Jira';
+    }
+  }
+
+  function pct(a, t) {
+    return t > 0 ? Math.min(Math.round((a / t) * 100), 100) : 0;
+  }
+  function fillCls(p) {
+    return p >= 80 ? 'fill-g' : p >= 50 ? 'fill-w' : 'fill-b';
+  }
+  function esc(s) {
+    return (s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  /**
+   * Build a metrics table.
+   * @param {Array}   items        - metrics array
+   * @param {boolean} readOnly     - true = actual value is display-only
+   * @param {string}  prefix       - unique ID prefix
+   * @param {boolean} showComments - true = show comment textarea per row
+   */
+  function buildTable(items, readOnly, prefix, showComments = true) {
+    if (!items.length)
+      return '<div class="loading">No metrics configured.</div>';
+
+    let html = `
+      <div class="tbl-head">
+        <div>Metric</div>
+        <div class="center">Actual</div>
+        <div class="center">Target</div>
+        <div class="center">Weight</div>
+        <div>Progress</div>
+      </div>`;
+
+    items.forEach(m => {
+      const a   = m.actual_value ?? 0;
+      const p   = pct(a, m.target);
+      const wc  = m.weightage >= 0 ? 'wt-pos' : 'wt-neg';
+      const wt  = m.weightage >= 0 ? `+${m.weightage}%` : `${m.weightage}%`;
+      const cmt = esc(m.comment);
+
+      const valCell = readOnly
+        ? `<div class="center">${m.actual_value ?? '—'}</div>`
+        : `<div class="center">
+             <input class="num-input"
+                    id="${prefix}_${m.name}"
+                    type="number" min="0"
+                    value="${m.actual_value ?? ''}"
+                    placeholder="0"/>
+           </div>`;
+
+      const commentHtml = showComments ? `
+        <div class="comment-row">
+          <span class="comment-icon">💬</span>
+          <textarea class="comment-input"
+                    id="${prefix}_cmt_${m.name}"
+                    placeholder="Add a comment for ${m.label}…">${cmt}</textarea>
+        </div>` : '';
+
+      html += `
+        <div class="metric-block">
+          <div class="tbl-row">
+            <div>${m.label}</div>
+            ${valCell}
+            <div class="center">${m.target}</div>
+            <div class="${wc}">${wt}</div>
+            <div class="prog">
+              <div class="prog-bar">
+                <div class="prog-fill ${fillCls(p)}"
+                     style="width:${p}%"></div>
+              </div>
+              <span class="prog-pct">${p}%</span>
+            </div>
+          </div>
+          ${commentHtml}
+        </div>`;
+    });
+
+    return html;
+  }
+
+  function render() {
+    const jiraMetrics   = metrics.filter(m =>  m.jira_auto);
+    const manualMetrics = metrics.filter(m => !m.jira_auto);
+
+    // Tab 1 — Jira: read-only values, NO comments
+    document.getElementById('jiraBox').innerHTML =
+      buildTable(jiraMetrics, true, 't1j', false);
+
+    // Tab 1 — Manual: editable values + comments
+    document.getElementById('manualBox').innerHTML =
+      buildTable(manualMetrics, false, 't1m', true);
+
+    // Tab 2 — ALL 7 metrics editable + comments
+    document.getElementById('allMetricsBox').innerHTML =
+      buildTable(metrics, false, 't2', true);
+
+    updateScores();
+  }
+
+  function updateScores() {
+    const entered = metrics.filter(m => m.actual_value != null).length;
+    document.getElementById('sEntered').textContent = entered;
+    document.getElementById('sTotal').textContent   = metrics.length;
+
+    let earn = 0, tot = 0;
+    metrics.forEach(m => {
+      if (m.actual_value != null) {
+        const ratio = m.target > 0
+          ? Math.min(m.actual_value / m.target, 1) : 0;
+        earn += ratio * Math.abs(m.weightage) * (m.weightage >= 0 ? 1 : -1);
+        tot  += Math.abs(m.weightage);
+      }
+    });
+    document.getElementById('sScore').textContent =
+      tot > 0 ? Math.round((earn / tot) * 100) + '%' : '—';
+  }
+
+  /**
+   * Generic save helper.
+   * @param {Array}   items       - metrics to save
+   * @param {string}  prefix      - input ID prefix
+   * @param {string}  msgId       - status message element ID
+   * @param {boolean} valReadOnly - true = keep existing actual_value
+   */
+  async function persist(items, prefix, msgId, valReadOnly = false) {
+    const yr  = document.getElementById('yr').value;
+    const msg = document.getElementById(msgId);
+    try {
+      for (const m of items) {
+        const inp     = document.getElementById(`${prefix}_${m.name}`);
+        const cmtEl   = document.getElementById(`${prefix}_cmt_${m.name}`);
+        const comment = cmtEl ? cmtEl.value.trim() : '';
+
+        let actualVal;
+        if (valReadOnly) {
+          if (!comment && m.actual_value == null) continue;
+          actualVal = m.actual_value ?? 0;
+        } else {
+          if (!inp || inp.value === '') continue;
+          actualVal = parseFloat(inp.value);
+        }
+
+        await api('/api/metrics/save', {
+          method: 'POST',
+          body:   JSON.stringify({
+            metric_name:  m.name,
+            actual_value: actualVal,
+            year:         parseInt(yr),
+            comment:      comment,
+          }),
+        });
+      }
+      msg.className   = 'status-msg st-ok';
+      msg.textContent = '✅ Saved successfully!';
+      await loadMetrics();
+    } catch (err) {
+      msg.className   = 'status-msg st-err';
+      msg.textContent = `❌ Save failed: ${err.message}`;
+    }
+    setTimeout(() => { msg.className = 'status-msg'; }, 4000);
+  }
+
+  // Tab 1 — Manual section (volunteer + demo)
+  function saveTab1Manual() {
+    persist(metrics.filter(m => !m.jira_auto), 't1m', 'msgTab1', false);
+  }
+
+  // Tab 2 — All 7 metrics
+  function saveTab2() {
+    persist(metrics, 't2', 'msgTab2', false);
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    location.href = '/';
+  }
+
+  init();
+</script>
+</body>
+</html>

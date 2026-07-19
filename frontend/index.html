@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jira Query Tool</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>🔍 Performance Metrics Tool</h1>
+    <p>Query and explore your Jira issues</p>
+  </header>
+
+  <main>
+    <!-- Controls -->
+    <section class="controls">
+      <div class="control-group">
+        <button id="btn-my-issues" class="btn btn-primary" onclick="loadMyIssues()">
+          👤 My Open Issues
+        </button>
+      </div>
+
+      <div class="control-group">
+        <input type="text" id="project-key" placeholder="Enter Project Key (e.g. DEV)" />
+        <button class="btn btn-secondary" onclick="loadProjectIssues()">
+          📁 Search by Project
+        </button>
+      </div>
+
+      <div class="control-group">
+        <label for="max-results">Max Results:</label>
+        <select id="max-results">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Status Bar -->
+    <div id="status-bar" class="status-bar hidden"></div>
+
+    <!-- Summary Stats -->
+    <section id="stats" class="stats hidden">
+      <div class="stat-card" id="stat-total"></div>
+      <div class="stat-card" id="stat-in-progress"></div>
+      <div class="stat-card" id="stat-high-priority"></div>
+    </section>
+
+    <!-- Results Table -->
+    <section id="results-section" class="hidden">
+      <div class="table-header">
+        <h2 id="results-title">Results</h2>
+        <input type="text" id="filter-input" placeholder="🔎 Filter results..." oninput="filterTable()" />
+      </div>
+      <div class="table-wrapper">
+        <table id="issues-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('key')">Key ↕</th>
+              <th onclick="sortTable('summary')">Summary ↕</th>
+              <th onclick="sortTable('status')">Status ↕</th>
+              <th onclick="sortTable('priority')">Priority ↕</th>
+              <th onclick="sortTable('assignee')">Assignee ↕</th>
+              <th onclick="sortTable('issue_type')">Type ↕</th>
+              <th onclick="sortTable('updated')">Updated ↕</th>
+            </tr>
+          </thead>
+          <tbody id="issues-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state hidden">
+      <p>😕 No issues found. Try a different query!</p>
+    </div>
+
+    <!-- Loader -->
+    <div id="loader" class="loader hidden">
+      <div class="spinner"></div>
+      <p>Fetching issues from Jira...</p>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

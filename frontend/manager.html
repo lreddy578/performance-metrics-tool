@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Metrics – Manager View</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;color:#172b4d}
+    .header{background:#6554c0;color:#fff;padding:14px 24px;
+            display:flex;justify-content:space-between;align-items:center}
+    .header h1{font-size:18px;font-weight:600}
+    .hright{display:flex;gap:10px;align-items:center}
+    .btn{padding:6px 14px;border-radius:4px;cursor:pointer;
+         border:none;font-size:13px;font-weight:500}
+    .btn-ghost{background:rgba(255,255,255,.15);color:#fff;
+               border:1px solid rgba(255,255,255,.3)}
+    .container{max-width:1200px;margin:24px auto;padding:0 16px}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:20px}
+    .controls select{padding:8px 12px;border:1px solid #dfe1e6;
+                     border-radius:4px;font-size:14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+    .card{background:#fff;border-radius:8px;padding:20px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .card-head{display:flex;justify-content:space-between;
+               align-items:center;margin-bottom:14px}
+    .emp-name{font-size:15px;font-weight:600}
+    .role-tag{font-size:11px;background:#e3f2fd;color:#0052cc;
+              padding:2px 10px;border-radius:10px}
+    .mrow{display:flex;justify-content:space-between;align-items:center;
+          padding:7px 0;border-bottom:1px solid #f4f5f7;font-size:12px}
+    .mrow:last-child{border-bottom:none}
+    .mlbl{color:#6b778c;flex:1}
+    .mbar{width:50px;height:5px;background:#dfe1e6;
+          border-radius:3px;margin:0 8px;overflow:hidden}
+    .mfill{height:100%;border-radius:3px}
+    .fg{background:#36b37e}.fw{background:#ff8b00}.fb{background:#de350b}
+    .mval{font-weight:600;min-width:60px;text-align:right}
+    .card-foot{text-align:center;margin-top:12px;padding-top:12px;
+               border-top:1px solid #dfe1e6}
+    .foot-val{font-size:22px;font-weight:700;color:#6554c0}
+    .foot-lbl{font-size:11px;color:#6b778c}
+    .empty{text-align:center;padding:40px;color:#6b778c;grid-column:1/-1;
+           background:#fff;border-radius:8px}
+    .loading{text-align:center;padding:40px;color:#6b778c}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>👥 Team Performance Metrics</h1>
+  <div class="hright">
+    <span id="mgrName">…</span>
+    <button class="btn btn-ghost" onclick="location.href='/dashboard'">My Dashboard</button>
+    <button class="btn btn-ghost" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="controls">
+    <strong>Year:</strong>
+    <select id="yr" onchange="loadTeam()">
+      <option value="2026">2026</option>
+      <option value="2025" selected>2025</option>
+      <option value="2024">2024</option>
+    </select>
+  </div>
+  <div class="grid" id="grid">
+    <div class="loading">Loading team data…</div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+  if (!token) location.href = '/';
+
+  const LABELS = {
+    user_stories_completed:  'User Stories',
+    valid_defects:           'Valid Defects',
+    invalid_defects:         'Invalid Defects',
+    voluntary_opportunities: 'Voluntary Opps',
+    p0_defects_leaked:       'P0 Defects Leaked',
+    complex_stories:         'Complex Stories (8+)',
+    demo_opportunities:      'Demo Opportunities',
+    initiatives_proposed:    'Initiatives Proposed',
+  };
+
+  const TARGETS = {
+    'SDET': {
+      user_stories_completed: 40, valid_defects: 80, invalid_defects: 5,
+      voluntary_opportunities: 5, p0_defects_leaked: 2,
+      complex_stories: 12, demo_opportunities: 12,
+    },
+    'Lead Engineer': {
+      user_stories_completed: 45, valid_defects: 95, invalid_defects: 3,
+      initiatives_proposed: 4, p0_defects_leaked: 1,
+      complex_stories: 12, demo_opportunities: 20,
+    },
+  };
+
+  async function api(url) {
+    const r = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (r.status === 401) { localStorage.removeItem('token'); location.href = '/'; }
+    if (r.status === 403) { alert('Manager access required.'); location.href = '/dashboard'; }
+    return r.json();
+  }
+
+  async function init() {
+    const me = await api('/auth/me');
+    document.getElementById('mgrName').textContent = me.display_name || me.email;
+    if (!me.is_manager) { location.href = '/dashboard'; return; }
+    await loadTeam();
+  }
+
+  async function loadTeam() {
+    const yr   = document.getElementById('yr').value;
+    const data = await api('/api/metrics/team?year=' + yr);
+    render(data);
+  }
+
+  function pct(a, t) { return t > 0 ? Math.min(Math.round((a / t) * 100), 100) : 0; }
+  function fc(p)      { return p >= 80 ? 'fg' : p >= 50 ? 'fw' : 'fb'; }
+
+  function render(data) {
+    const grid = document.getElementById('grid');
+    if (!data || !data.length) {
+      grid.innerHTML = `
+        <div class="empty">
+          <p style="font-size:32px;margin-bottom:12px">👥</p>
+          <p><strong>No team members found.</strong></p>
+          <p style="margin-top:8px;font-size:13px">
+            Go to <a href="/docs" target="_blank">/docs</a> →
+            <code>PATCH /admin/users/{id}</code> to assign employees to your manager ID.
+          </p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = data.map(emp => {
+      const role    = emp.employee.role;
+      const targets = TARGETS[role] || TARGETS['SDET'];
+      const map     = {};
+      emp.metrics.forEach(m => { map[m.metric_name] = m.actual_value; });
+
+      const rows = Object.keys(targets).map(k => {
+        const a = map[k];
+        const t = targets[k];
+        const p = a != null ? pct(a, t) : 0;
+        return `
+          <div class="mrow">
+            <span class="mlbl">${LABELS[k] || k}</span>
+            <div class="mbar">
+              <div class="mfill ${fc(p)}" style="width:${p}%"></div>
+            </div>
+            <span class="mval">${a != null ? a : '—'} / ${t}</span>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="card">
+          <div class="card-head">
+            <span class="emp-name">👤 ${emp.employee.display_name}</span>
+            <span class="role-tag">${role}</span>
+          </div>
+          ${rows}
+          <div class="card-foot">
+            <div class="foot-val">${emp.metrics.length} / ${Object.keys(targets).length}</div>
+            <div class="foot-lbl">Metrics Entered</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function logout() { localStorage.removeItem('token'); location.href = '/'; }
+
+  init();
+</script>
+</body>
+</html>
