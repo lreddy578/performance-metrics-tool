@@ -3,31 +3,56 @@ from typing  import Optional
 
 
 class RegisterRequest(BaseModel):
-    email:        str
-    password:     str
-    display_name: str
-    role:         str = "SDET"
-
+    name:     str
+    email:    str
+    role:     str = "SDET"
+    password: str
+    manager_email: str = ""
 
 class LoginRequest(BaseModel):
     email:    str
     password: str
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type:   str
-    user:         dict
+class SetPasswordRequest(BaseModel):
+    password: str
 
 
-class MetricInput(BaseModel):
-    metric_name:  str
-    actual_value: float
-    year:         int
-    comment:      str = ""
+class UserCreate(BaseModel):
+    name:     str
+    email:    str
+    role:     str = "SDET"
+    password: str
+    manager_email: str = ""
 
 
 class UserUpdate(BaseModel):
-    role:       Optional[str] = None
-    is_manager: Optional[int] = None
-    manager_id: Optional[int] = None
+    name:     str
+    email:    str
+    role:     str
+    password: Optional[str] = None
+    manager_email: str = ""
+
+
+class JiraAuthRequest(BaseModel):
+    jira_url:       str
+    jira_email:     str
+    jira_api_token: str
+
+
+class MetricEntryCreate(BaseModel):
+    user_stories_completed:  Optional[float] = None
+    valid_defects:           Optional[float] = None
+    invalid_defects:         Optional[float] = None
+    p0_defects_leaked:       Optional[float] = None
+    complex_stories:         Optional[float] = None
+    volunteer_opportunities: Optional[float] = None
+    demo_opportunities:      Optional[float] = None
+    notes:                   str = ""
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetWithTokenRequest(BaseModel):
+    token: str
+    password: str

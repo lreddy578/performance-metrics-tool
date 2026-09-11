@@ -1,64 +1,75 @@
-import os
+import hashlib
+import secrets
+import json
 from datetime import datetime, timedelta
-from typing import Optional
+from pathlib import Path
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+SESSIONS_FILE   = Path("data/sessions.json")
+SESSION_TTL_HRS = 8
+_sessions: dict = {}
 
-import storage
 
-SECRET_KEY                  = os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
-ALGORITHM                   = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
+def load_sessions():
+    global _sessions
+    if SESSIONS_FILE.exists():
+        try:
+            raw = json.loads(
+                SESSIONS_FILE.read_text(encoding="utf-8"))
+            now = datetime.utcnow().isoformat()
+            # Drop expired sessions on load
+            _sessions = {k: v for k, v in raw.items()
+                         if v.get("expires_at", "") > now}
+        except Exception:
+            _sessions = {}
 
-bearer_scheme = HTTPBearer()
-pwd_context   = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def _save():
+    SESSIONS_FILE.parent.mkdir(exist_ok=True)
+    SESSIONS_FILE.write_text(
+        json.dumps(_sessions, indent=2), encoding="utf-8")
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    salt = secrets.token_hex(16)
+    h    = hashlib.sha256(
+        f"{salt}{password}".encode()).hexdigest()
+    return f"{salt}:{h}"
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
-
-def create_access_token(data: dict,
-                        expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    expire    = datetime.utcnow() + (
-        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-class CurrentUser:
-    def __init__(self, user: dict):
-        self.id           = user["id"]
-        self.email        = user["email"]
-        self.display_name = user["display_name"]
-        self.role         = user["role"]
-        self.is_manager   = user["is_manager"]
-        self.manager_id   = user["manager_id"]
-
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-) -> CurrentUser:
-    token = credentials.credentials
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if not email:
-            raise HTTPException(status_code=401, detail="Invalid token.")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token.")
+        salt, h = hashed.split(":", 1)
+        computed = hashlib.sha256(
+            f"{salt}{plain}".encode()).hexdigest()
+        return secrets.compare_digest(computed, h)
+    except Exception:
+        return False
 
-    user = storage.get_user_by_email(email)
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found.")
 
-    return CurrentUser(user)
+def create_session(user_id: int) -> str:
+    token   = secrets.token_urlsafe(32)
+    expires = (datetime.utcnow()
+               + timedelta(hours=SESSION_TTL_HRS)).isoformat()
+    _sessions[token] = {
+        "user_id":    user_id,
+        "expires_at": expires,
+    }
+    _save()
+    return token
+
+
+def get_session_user_id(token: str) -> int | None:
+    sess = _sessions.get(token)
+    if not sess:
+        return None
+    if sess["expires_at"] < datetime.utcnow().isoformat():
+        del _sessions[token]
+        _save()
+        return None
+    return int(sess["user_id"])
+
+
+def delete_session(token: str):
+    if token in _sessions:
+        del _sessions[token]
+        _save()

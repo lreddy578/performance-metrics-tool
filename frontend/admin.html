@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Performance Metrics — Admin</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
+         color:#172b4d;min-height:100vh}
+
+    .header{background:#172b4d;color:#fff;padding:14px 28px;
+            display:flex;align-items:center;justify-content:space-between;
+            flex-wrap:wrap;gap:10px}
+    .header h1{font-size:20px;font-weight:600}
+    .admin-badge{background:#de350b;color:#fff;padding:3px 10px;
+                 border-radius:10px;font-size:11px;font-weight:700;
+                 margin-left:8px}
+    .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+    .nav-link{color:#fff;text-decoration:none;
+              background:rgba(255,255,255,.15);padding:8px 16px;
+              border-radius:4px;font-size:13px;font-weight:500;
+              transition:background .15s}
+    .nav-link:hover{background:rgba(255,255,255,.25)}
+    .btn-logout{background:rgba(222,53,11,.7);color:#fff;border:none;
+                padding:8px 16px;border-radius:4px;cursor:pointer;
+                font-size:13px;font-weight:500;transition:background .15s}
+    .btn-logout:hover{background:rgba(222,53,11,1)}
+
+    /* Full-screen loading/blocking overlay shown until auth passes */
+    #authGuard{position:fixed;inset:0;background:#f4f5f7;
+               display:flex;align-items:center;justify-content:center;
+               z-index:9999;font-size:15px;color:#6b778c}
+
+    .container{max-width:1100px;margin:24px auto;padding:0 20px}
+    .card{background:#fff;border-radius:8px;padding:20px 24px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
+
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);
+           gap:16px;margin-bottom:20px}
+    @media(max-width:600px){.stats{grid-template-columns:1fr}}
+    .stat{background:#fff;border-radius:8px;padding:18px 20px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
+    .stat .val{font-size:32px;font-weight:700;color:#172b4d}
+    .stat .lbl{font-size:12px;color:#6b778c;margin-top:4px}
+
+    .btn{padding:9px 18px;border:none;border-radius:4px;cursor:pointer;
+         font-size:13px;font-weight:600;display:inline-flex;
+         align-items:center;gap:6px;transition:background .15s,opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-primary{background:#0052cc;color:#fff}
+    .btn-primary:hover:not(:disabled){background:#0065ff}
+    .btn-warning{background:#ff991f;color:#fff}
+    .btn-warning:hover:not(:disabled){background:#e58a00}
+    .btn-danger {background:#de350b;color:#fff}
+    .btn-danger:hover:not(:disabled){background:#c4280a}
+    .btn-ghost  {background:#f4f5f7;color:#344563;border:1px solid #dfe1e6}
+    .btn-ghost:hover:not(:disabled){background:#ebecf0}
+    .btn-sm{padding:5px 11px;font-size:12px}
+
+    .table-header{display:flex;align-items:center;
+                  justify-content:space-between;
+                  margin-bottom:16px;flex-wrap:wrap;gap:10px}
+    .table-header h2{font-size:16px;font-weight:600}
+    .badge{background:#ebecf0;color:#6b778c;padding:2px 10px;
+           border-radius:10px;font-size:12px}
+    .search-box{padding:8px 14px;border:1px solid #dfe1e6;
+                border-radius:4px;font-size:13px;min-width:220px}
+    .search-box:focus{outline:none;border-color:#0052cc}
+
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{background:#f8f9fa;padding:12px 16px;text-align:left;
+             font-size:11px;font-weight:700;color:#6b778c;
+             text-transform:uppercase;letter-spacing:.5px;
+             border-bottom:2px solid #dfe1e6;white-space:nowrap}
+    tbody td{padding:12px 16px;border-bottom:1px solid #f4f5f7;
+             vertical-align:middle}
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr:hover td{background:#f8f9fa}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+
+    .role-pill{padding:3px 12px;border-radius:20px;font-size:12px;
+               font-weight:600;white-space:nowrap}
+    .role-sdet   {background:#deebff;color:#0052cc}
+    .role-sde    {background:#e3fcef;color:#006644}
+    .role-qa     {background:#fff0b3;color:#974f0c}
+    .role-manager{background:#ffd6cc;color:#bf2600}
+
+    .pw-badge{padding:3px 10px;border-radius:20px;font-size:11px;
+              font-weight:600}
+    .pw-set  {background:#e3fcef;color:#006644}
+    .pw-unset{background:#ffebe6;color:#bf2600}
+
+    .empty{text-align:center;padding:50px 20px;color:#6b778c}
+
+    .overlay{position:fixed;inset:0;background:rgba(9,30,66,.55);
+             display:flex;align-items:center;justify-content:center;
+             z-index:900;padding:16px}
+    .overlay.hidden{display:none !important}
+    .modal{background:#fff;border-radius:8px;width:100%;max-width:520px;
+           max-height:90vh;overflow-y:auto;
+           box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .m-head{padding:20px 24px 16px;border-bottom:1px solid #f4f5f7;
+            display:flex;align-items:center;justify-content:space-between}
+    .m-head h2{font-size:18px;font-weight:600}
+    .m-close{background:none;border:none;font-size:22px;cursor:pointer;
+             color:#6b778c;padding:4px 8px;border-radius:4px;line-height:1}
+    .m-close:hover{background:#f4f5f7}
+    .m-body{padding:22px 24px}
+    .m-foot{padding:14px 24px;border-top:1px solid #f4f5f7;
+            display:flex;justify-content:flex-end;gap:10px}
+
+    .field{margin-bottom:14px}
+    .field label{display:block;font-size:13px;font-weight:600;
+                 margin-bottom:5px}
+    .field input,.field select{width:100%;padding:9px 12px;
+      border:1px solid #dfe1e6;border-radius:4px;font-size:14px;
+      font-family:inherit;color:#172b4d;background:#fff}
+    .field input:focus,.field select:focus{
+      outline:none;border-color:#0052cc;
+      box-shadow:0 0 0 2px rgba(0,82,204,.1)}
+    .field .hint{font-size:11px;color:#6b778c;margin-top:4px}
+
+    .alert{padding:10px 14px;border-radius:4px;font-size:13px;
+           margin-bottom:14px}
+    .alert-err{background:#ffebe6;color:#bf2600;
+               border-left:4px solid #de350b}
+    .alert-ok {background:#e3fcef;color:#006644;
+               border-left:4px solid #36b37e}
+
+    .confirm-box{background:#fff;border-radius:8px;width:100%;
+                 max-width:420px;padding:28px;text-align:center;
+                 box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .confirm-box h3{font-size:17px;font-weight:600;margin-bottom:10px}
+    .confirm-box p{font-size:13px;color:#6b778c;margin-bottom:22px;
+                   line-height:1.6}
+    .confirm-actions{display:flex;justify-content:center;gap:12px}
+  </style>
+</head>
+<body>
+
+<!-- ✅ Blocks the entire page until auth check passes -->
+<div id="authGuard">🔒 Verifying access…</div>
+
+<div class="header">
+  <h1>⚙️ Admin Panel
+    <span class="admin-badge">ADMIN</span>
+  </h1>
+  <div class="nav-links">
+    <a href="/user" class="nav-link">← My Metrics</a>
+    <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="val" id="statUsers">—</div>
+      <div class="lbl">Total Users</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="statPw">—</div>
+      <div class="lbl">Password Set</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="statEntries">—</div>
+      <div class="lbl">Total Entries</div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card">
+    <div class="table-header">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h2>👥 Users</h2>
+        <span class="badge" id="userBadge">0 users</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" class="search-box" id="searchBox"
+               placeholder="🔍 Search…"
+               oninput="renderTable()"/>
+        <button class="btn btn-primary" onclick="openAdd()">
+          ➕ Add User
+        </button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Email</th><th>Role</th>
+            <th>Password</th><th>Entries</th><th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="emptyState" class="empty" style="display:none">
+        <strong>No users yet</strong>
+        <p style="margin-top:8px">
+          Click <strong>➕ Add User</strong> to create the first user.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="overlay hidden" id="userModal">
+  <div class="modal">
+    <div class="m-head">
+      <h2 id="modalTitle">➕ Add User</h2>
+      <button class="m-close" onclick="hideModal('userModal')">✕</button>
+    </div>
+    <div class="m-body">
+      <div id="modalAlert"></div>
+      <input type="hidden" id="editId"/>
+      <div class="field">
+        <label>Full Name <span style="color:#de350b">*</span></label>
+        <input type="text" id="fName" placeholder="e.g. Jane Smith"
+               autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Email <span style="color:#de350b">*</span></label>
+        <input type="email" id="fEmail" placeholder="jane@company.com"
+               autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select id="fRole">
+          <option value="SDET">SDET</option>
+          <option value="SDE">SDE</option>
+          <option value="QA Engineer">QA Engineer</option>
+          <option value="Manager">Manager</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Manager Email</label>
+        <input type="email" id="fManagerEmail"
+               placeholder="manager@company.com" autocomplete="off"/>
+        <div class="hint">Used to associate this user with a manager's team.</div>
+      </div>
+      <div class="field">
+        <label>Password
+          <span style="color:#de350b" id="pwRequired">*</span>
+        </label>
+        <input type="password" id="fPassword"
+               placeholder="Min 4 characters" autocomplete="new-password"/>
+        <div class="hint" id="pwHint">
+          This is the password the user will use to log in.
+        </div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost"
+              onclick="hideModal('userModal')">Cancel</button>
+      <button class="btn btn-primary" id="submitBtn"
+              onclick="submitUser()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="overlay hidden" id="pwModal">
+  <div class="modal">
+    <div class="m-head">
+      <h2>🔑 Reset Password</h2>
+      <button class="m-close" onclick="hideModal('pwModal')">✕</button>
+    </div>
+    <div class="m-body">
+      <div id="pwAlert"></div>
+      <p style="font-size:13px;color:#6b778c;margin-bottom:16px">
+        Setting password for: <strong id="pwUserName">—</strong>
+      </p>
+      <input type="hidden" id="pwUserId"/>
+      <div class="field">
+        <label>New Password <span style="color:#de350b">*</span></label>
+        <input type="password" id="newPassword"
+               placeholder="Min 4 characters" autocomplete="new-password"/>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost"
+              onclick="hideModal('pwModal')">Cancel</button>
+      <button class="btn btn-primary" id="pwSubmitBtn"
+              onclick="submitPassword()">🔑 Set Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="overlay hidden" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>🗑️ Delete User?</h3>
+    <p id="confirmMsg">
+      This will permanently delete the user and all their entries.
+    </p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost"
+              onclick="hideModal('confirmOverlay')">Cancel</button>
+      <button class="btn btn-danger" id="confirmBtn"
+              onclick="confirmDelete()">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ADMIN_EMAIL = 'lreddy@teampurpose.com'
+  const TOKEN       = localStorage.getItem('pm_token')
+
+  // ── 🔒 Auth Guard — hides page until verified, then calls boot() ─────────
+  ;(async () => {
+    // No token at all → go to login
+    if (!TOKEN) {
+      window.location.replace('/login')
+      return
+    }
+    try {
+      const r = await fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      })
+      if (!r.ok) throw new Error('not authenticated')
+      const me = await r.json()
+      if (me.email.toLowerCase() !== ADMIN_EMAIL) {
+        // Logged in but NOT admin → send to /user
+        window.location.replace('/user')
+        return
+      }
+      // ✅ Auth passed — remove guard overlay and load page
+      document.getElementById('authGuard').style.display = 'none'
+      boot()   // ← ONLY called here, after auth is confirmed
+    } catch {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login')
+    }
+  })()
+  // ─────────────────────────────────────────────────────────────────────────
+
+  let allUsers     = []
+  let deleteTarget = null
+
+  async function boot() {
+    await loadUsers()
+  }
+
+  async function loadUsers() {
+    try {
+      allUsers = await apiGet('/api/users')
+      updateStats()
+      renderTable()
+    } catch(e) {
+      showPageError('❌ Failed to load users: ' + errMsg(e))
+    }
+  }
+
+  function showPageError(msg) {
+    document.querySelector('.container').innerHTML =
+      `<div style="background:#ffebe6;color:#bf2600;padding:20px 24px;
+                   border-radius:8px;border-left:4px solid #de350b;
+                   font-size:14px">${msg}</div>`
+  }
+
+  function updateStats() {
+    document.getElementById('statUsers').textContent =
+      allUsers.length
+    document.getElementById('statPw').textContent   =
+      allUsers.filter(u => u.has_password).length
+    document.getElementById('statEntries').textContent =
+      allUsers.reduce((s,u) => s + (u.entry_count||0), 0)
+  }
+
+  function renderTable() {
+    const q    = document.getElementById('searchBox')
+                         .value.toLowerCase().trim()
+    const rows = q
+      ? allUsers.filter(u =>
+          u.name.toLowerCase().includes(q)  ||
+          u.email.toLowerCase().includes(q) ||
+          u.role.toLowerCase().includes(q))
+      : allUsers
+
+    document.getElementById('userBadge').textContent =
+      `${rows.length} user${rows.length!==1?'s':''}`
+    const tbody = document.getElementById('tbody')
+    const empty = document.getElementById('emptyState')
+
+    if (!rows.length) {
+      tbody.innerHTML     = ''
+      empty.style.display = ''
+      return
+    }
+    empty.style.display = 'none'
+    tbody.innerHTML = rows.map(u => `
+      <tr>
+        <td style="color:#6b778c;font-size:12px">#${u.id}</td>
+        <td><strong>${esc(u.name)}</strong></td>
+        <td style="color:#6b778c">${esc(u.email)}</td>
+        <td><span class="role-pill ${roleCls(u.role)}">${esc(u.role)}</span></td>
+        <td>
+          <span class="pw-badge ${u.has_password?'pw-set':'pw-unset'}">
+            ${u.has_password ? '✅ Set' : '⚠️ Not Set'}
+          </span>
+        </td>
+        <td style="color:#6b778c">${u.entry_count||0}</td>
+        <td style="color:#6b778c;font-size:12px">
+          ${(u.created_at||'').substring(0,10)||'—'}
+        </td>
+        <td class="actions">
+          <button class="btn btn-warning btn-sm"
+                  onclick="openEdit(${u.id})">✏️ Edit</button>
+          <button class="btn btn-primary btn-sm"
+                  onclick="openResetPw(${u.id},'${esc(u.name)}')">
+            🔑 Password
+          </button>
+          <button class="btn btn-danger btn-sm"
+                  onclick="askDelete(${u.id},'${esc(u.name)}')">
+            🗑️
+          </button>
+        </td>
+      </tr>`).join('')
+  }
+
+  function roleCls(r) {
+    const rl = r.toLowerCase()
+    if (rl==='sdet')    return 'role-sdet'
+    if (rl==='sde')     return 'role-sde'
+    if (rl==='manager') return 'role-manager'
+    return 'role-qa'
+  }
+
+  /* ── Add ── */
+  function openAdd() {
+    document.getElementById('modalTitle').textContent    = '➕ Add User'
+    document.getElementById('submitBtn').textContent     = '💾 Save'
+    document.getElementById('editId').value              = ''
+    document.getElementById('modalAlert').innerHTML      = ''
+    document.getElementById('fName').value               = ''
+    document.getElementById('fEmail').value              = ''
+    document.getElementById('fRole').value               = 'SDET'
+    document.getElementById('fManagerEmail').value       = ''
+    document.getElementById('fPassword').value           = ''
+    document.getElementById('pwRequired').style.display  = ''
+    document.getElementById('pwHint').textContent =
+      'This is the password the user will use to log in.'
+    showModal('userModal')
+  }
+
+  /* ── Edit ── */
+  function openEdit(id) {
+    const u = allUsers.find(x=>x.id===id)
+    if (!u) return
+    document.getElementById('modalTitle').textContent    = '✏️ Edit User'
+    document.getElementById('submitBtn').textContent     = '✔ Update'
+    document.getElementById('editId').value              = id
+    document.getElementById('modalAlert').innerHTML      = ''
+    document.getElementById('fName').value               = u.name
+    document.getElementById('fEmail').value              = u.email
+    document.getElementById('fRole').value               = u.role
+    document.getElementById('fManagerEmail').value       = u.manager_email || ''
+    document.getElementById('fPassword').value           = ''
+    document.getElementById('pwRequired').style.display  = 'none'
+    document.getElementById('pwHint').textContent =
+      'Leave blank to keep existing password.'
+    showModal('userModal')
+  }
+
+  async function submitUser() {
+    const editId   = document.getElementById('editId').value
+    const name     = document.getElementById('fName').value.trim()
+    const email    = document.getElementById('fEmail').value.trim()
+    const role     = document.getElementById('fRole').value
+    const managerEmail = document.getElementById('fManagerEmail').value.trim()
+    const password = document.getElementById('fPassword').value
+
+    if (!name || !email) {
+      showAlert('modalAlert','err','⚠️ Name and email are required.')
+      return
+    }
+    if (!editId && !password) {
+      showAlert('modalAlert','err','⚠️ Password is required for new users.')
+      return
+    }
+    if (password && password.length < 4) {
+      showAlert('modalAlert','err','⚠️ Password must be at least 4 characters.')
+      return
+    }
+    const body = { name, email, role, manager_email: managerEmail }
+    if (password) body.password = password
+    const btn = startLoading('submitBtn','Saving…')
+    try {
+      if (editId) {
+        await apiPut(`/api/users/${editId}`, body)
+      } else {
+        await apiPost('/api/users', body)
+      }
+      hideModal('userModal')
+      await loadUsers()
+    } catch(e) {
+      showAlert('modalAlert','err','❌ '+errMsg(e))
+    } finally { stopLoading(btn) }
+  }
+
+  /* ── Reset Password ── */
+  function openResetPw(id, name) {
+    document.getElementById('pwUserId').value         = id
+    document.getElementById('pwUserName').textContent = name
+    document.getElementById('newPassword').value      = ''
+    document.getElementById('pwAlert').innerHTML      = ''
+    showModal('pwModal')
+  }
+
+  async function submitPassword() {
+    const id  = document.getElementById('pwUserId').value
+    const pwd = document.getElementById('newPassword').value
+    if (!pwd || pwd.length < 4) {
+      showAlert('pwAlert','err','⚠️ Password must be at least 4 characters.')
+      return
+    }
+    const btn = startLoading('pwSubmitBtn','Saving…')
+    try {
+      await apiPost(`/api/users/${id}/reset-password`, { password: pwd })
+      showAlert('pwAlert','ok','✅ Password updated!')
+      await loadUsers()
+      setTimeout(() => hideModal('pwModal'), 1200)
+    } catch(e) {
+      showAlert('pwAlert','err','❌ '+errMsg(e))
+    } finally { stopLoading(btn) }
+  }
+
+  /* ── Delete ── */
+  function askDelete(id, name) {
+    deleteTarget = id
+    document.getElementById('confirmMsg').innerHTML =
+      `Delete <strong>${esc(name)}</strong> and all their entries?`
+    showModal('confirmOverlay')
+  }
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const btn = startLoading('confirmBtn','Deleting…')
+    try {
+      await apiDel(`/api/users/${deleteTarget}`)
+      hideModal('confirmOverlay')
+      deleteTarget = null
+      await loadUsers()
+    } catch(e) {
+      window.alert('Delete failed: '+errMsg(e))
+    } finally { stopLoading(btn) }
+  }
+
+  /* ── Logout ── */
+  async function logout() {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      })
+    } finally {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login')
+    }
+  }
+
+  /* ── Modal helpers ── */
+  function showModal(id){
+    document.getElementById(id).classList.remove('hidden')
+  }
+  function hideModal(id){
+    document.getElementById(id).classList.add('hidden')
+  }
+  document.querySelectorAll('.overlay').forEach(o=>{
+    o.addEventListener('click',e=>{
+      if(e.target===o) o.classList.add('hidden')
+    })
+  })
+
+  /* ── Helpers ── */
+  function esc(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+  function showAlert(cid,type,msg){
+    document.getElementById(cid).innerHTML=
+      `<div class="alert alert-${type}">${msg}</div>`
+  }
+  function errMsg(e){
+    if(!e) return 'Unknown error'
+    return typeof e.message==='string'?e.message:String(e)
+  }
+  function startLoading(btnId,txt){
+    const b=document.getElementById(btnId)
+    b._orig=b.textContent;b.disabled=true;b.textContent=txt;return b
+  }
+  function stopLoading(b){b.disabled=false;b.textContent=b._orig}
+
+  /* ── API (🔒 always sends Bearer token) ── */
+  function authHdrs(){
+    return {
+      'Authorization': `Bearer ${TOKEN}`,
+      'Content-Type':  'application/json'
+    }
+  }
+  async function apiGet(url){
+    const r = await fetch(url,{headers:authHdrs()})
+    if(r.status===401){
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login');return
+    }
+    const d = await r.json()
+    if(!r.ok) throw new Error(d.detail||'Request failed')
+    return d
+  }
+  async function apiPost(url,body){
+    const r = await fetch(url,{
+      method:'POST',headers:authHdrs(),body:JSON.stringify(body)})
+    if(r.status===401){
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login');return
+    }
+    const d = await r.json()
+    if(!r.ok) throw new Error(d.detail||'Request failed')
+    return d
+  }
+  async function apiPut(url,body){
+    const r = await fetch(url,{
+      method:'PUT',headers:authHdrs(),body:JSON.stringify(body)})
+    if(r.status===401){
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login');return
+    }
+    const d = await r.json()
+    if(!r.ok) throw new Error(d.detail||'Request failed')
+    return d
+  }
+  async function apiDel(url){
+    const r = await fetch(url,{method:'DELETE',headers:authHdrs()})
+    if(r.status===401){
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login');return
+    }
+    if(!r.ok){const d=await r.json();throw new Error(d.detail||'Failed')}
+  }
+
+  // ⚠️ boot() is NOT called here — it's called inside the auth guard above
+</script>
+</body>
+</html>

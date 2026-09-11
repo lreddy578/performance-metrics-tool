@@ -3,213 +3,382 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Performance Metrics — Sign In</title>
+  <title>Performance Metrics — Login</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
-         display:flex;align-items:center;justify-content:center;
-         min-height:100vh;padding:20px}
-
-    .card{background:#fff;border-radius:8px;padding:40px;
-          width:100%;max-width:420px;
-          box-shadow:0 4px 20px rgba(0,0,0,.1)}
-
-    .logo{text-align:center;margin-bottom:28px}
-    .logo h1{font-size:22px;font-weight:700;color:#0052cc}
-    .logo p{font-size:13px;color:#6b778c;margin-top:4px}
-
-    .tabs{display:flex;border-bottom:2px solid #dfe1e6;margin-bottom:24px}
+    body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;
+         color:#172b4d;min-height:100vh;display:flex;
+         align-items:center;justify-content:center;padding:20px}
+    .card{background:#fff;border-radius:12px;padding:36px 40px;
+          width:100%;max-width:440px;
+          box-shadow:0 4px 24px rgba(0,0,0,.1)}
+    .logo{text-align:center;margin-bottom:24px}
+    .logo .icon{font-size:48px}
+    .logo h1{font-size:22px;font-weight:700;margin-top:10px}
+    .logo p{color:#6b778c;font-size:14px;margin-top:6px}
+    .tabs{display:flex;border-bottom:2px solid #f4f5f7;margin-bottom:24px}
     .tab{flex:1;padding:10px;text-align:center;cursor:pointer;
-         font-size:14px;font-weight:500;color:#6b778c;
-         border-bottom:3px solid transparent;margin-bottom:-2px;
-         transition:color .15s,border-color .15s;background:none;border-top:none;
-         border-left:none;border-right:none}
+         font-size:14px;font-weight:600;color:#6b778c;
+         border-bottom:3px solid transparent;
+         margin-bottom:-2px;transition:all .15s}
+    .tab:hover{color:#172b4d}
     .tab.active{color:#0052cc;border-bottom-color:#0052cc}
-    .tab-pane{display:none}
-    .tab-pane.active{display:block}
-
+    .panel{display:none}
+    .panel.active{display:block}
     .field{margin-bottom:16px}
-    label{display:block;font-size:13px;font-weight:500;
-          color:#172b4d;margin-bottom:6px}
-    input,select{width:100%;padding:10px 12px;border:1px solid #dfe1e6;
-                 border-radius:4px;font-size:14px;font-family:inherit;
-                 color:#172b4d;background:#fafbfc;
-                 transition:border-color .15s}
-    input:focus,select:focus{outline:none;border-color:#0052cc;
-                              background:#fff;
-                              box-shadow:0 0 0 2px rgba(0,82,204,.1)}
-
-    .btn{width:100%;padding:11px;background:#0052cc;color:#fff;
-         border:none;border-radius:4px;font-size:15px;font-weight:600;
-         cursor:pointer;transition:background .15s;margin-top:8px}
-    .btn:hover{background:#0065ff}
-    .btn:disabled{background:#a5adba;cursor:not-allowed}
-
-    .error{background:#ffebe6;color:#bf2600;padding:10px 12px;
-           border-radius:4px;font-size:13px;margin-top:12px;display:none}
+    .field label{display:block;font-size:13px;font-weight:600;
+                 margin-bottom:6px}
+    .field .hint{font-size:11px;color:#6b778c;margin-top:5px;
+                 line-height:1.5}
+    .field input,.field select{
+      width:100%;padding:11px 14px;border:1px solid #dfe1e6;
+      border-radius:6px;font-size:14px;font-family:inherit;
+      color:#172b4d;background:#fff;transition:border-color .15s}
+    .field input:focus,.field select:focus{
+      outline:none;border-color:#0052cc;
+      box-shadow:0 0 0 2px rgba(0,82,204,.12)}
+    .btn{width:100%;padding:12px;border:none;border-radius:6px;
+         cursor:pointer;font-size:15px;font-weight:600;
+         background:#0052cc;color:#fff;margin-top:4px;
+         transition:background .15s,opacity .15s;
+         display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn:hover:not(:disabled){background:#0065ff}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-success{background:#36b37e}
+    .btn-success:hover:not(:disabled){background:#2d9c6b}
+    .alert{padding:11px 14px;border-radius:6px;font-size:13px;
+           margin-bottom:16px;line-height:1.5}
+    .alert-err {background:#ffebe6;color:#bf2600;
+                border-left:4px solid #de350b}
+    .alert-ok  {background:#e3fcef;color:#006644;
+                border-left:4px solid #36b37e}
+    .alert-info{background:#deebff;color:#0052cc;
+                border-left:4px solid #0052cc}
+    .pw-strength{height:4px;border-radius:2px;
+                 margin-top:6px;transition:all .3s;background:#dfe1e6}
+    .pw-strength.weak  {background:#de350b;width:30%}
+    .pw-strength.fair  {background:#ff991f;width:60%}
+    .pw-strength.strong{background:#36b37e;width:100%}
+    .pw-strength-lbl{font-size:11px;color:#6b778c;margin-top:4px}
+    .footer-note{text-align:center;margin-top:18px;font-size:12px;
+                 color:#6b778c}
+    .footer-note a{color:#0052cc;text-decoration:none}
+    .footer-note a:hover{text-decoration:underline}
+    .reset-link-box{background:#f8f9fa;border:1px solid #dfe1e6;
+                    border-radius:6px;padding:12px 14px;font-size:12px;
+                    word-break:break-all;color:#172b4d;margin-bottom:12px;
+                    font-family:monospace;line-height:1.6}
+    .copy-btn{width:100%;padding:10px;border:1px solid #0052cc;
+              border-radius:6px;background:#fff;color:#0052cc;
+              font-size:13px;font-weight:600;cursor:pointer;
+              transition:background .15s}
+    .copy-btn:hover{background:#deebff}
+    .back-link{display:inline-flex;align-items:center;gap:4px;
+               font-size:13px;color:#0052cc;cursor:pointer;
+               background:none;border:none;padding:0;margin-bottom:16px;
+               font-family:inherit}
+    .back-link:hover{text-decoration:underline}
   </style>
 </head>
 <body>
-
 <div class="card">
   <div class="logo">
-    <h1>📊 Performance Metrics</h1>
-    <p>Track your engineering performance</p>
+    <div class="icon">📊</div>
+    <h1>Performance Metrics</h1>
+    <p>Track your work. Own your growth.</p>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tabSignIn"
-            onclick="switchTab('signin')">Sign In</button>
-    <button class="tab" id="tabSignUp"
-            onclick="switchTab('signup')">Sign Up</button>
+  <!-- Tabs -->
+  <div class="tabs" id="mainTabs">
+    <div class="tab active" id="tab-login"
+         onclick="switchTab('login')">🔐 Sign In</div>
+    <div class="tab" id="tab-register"
+         onclick="switchTab('register')">✨ Sign Up</div>
   </div>
 
-  <!-- ── Sign In ── -->
-  <div id="paneSignIn" class="tab-pane active">
+  <!-- ── LOGIN PANEL ── -->
+  <div class="panel active" id="panel-login">
+    <div id="loginAlert"></div>
     <div class="field">
-      <label>Email</label>
-      <input type="email" id="loginEmail"
-             placeholder="you@company.com" autocomplete="email"/>
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="you@company.com"
+             onkeydown="if(event.key==='Enter')login()"/>
     </div>
     <div class="field">
       <label>Password</label>
-      <input type="password" id="loginPwd"
-             placeholder="••••••••" autocomplete="current-password"/>
+      <input type="password" id="loginPassword" placeholder="Your password"
+             onkeydown="if(event.key==='Enter')login()"/>
     </div>
-    <button class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
-    <div class="error" id="loginErr"></div>
+    <button class="btn" id="loginBtn" onclick="login()">🔐 Sign In</button>
+    <div class="footer-note" style="margin-top:14px">
+      <a href="#" onclick="switchTab('forgot');return false">
+        🔑 Forgot your password?
+      </a>
+    </div>
+    <div class="footer-note">
+      New here?
+      <a href="#" onclick="switchTab('register');return false">
+        Create an account →
+      </a>
+    </div>
   </div>
 
-  <!-- ── Sign Up ── -->
-  <div id="paneSignUp" class="tab-pane">
+  <!-- ── REGISTER PANEL ── -->
+  <div class="panel" id="panel-register">
+    <div id="registerAlert"></div>
     <div class="field">
-      <label>Display Name</label>
-      <input type="text" id="regName" placeholder="Jane Smith"/>
+      <label>Full Name <span style="color:#de350b">*</span></label>
+      <input type="text" id="regName" placeholder="e.g. Jane Smith"/>
     </div>
     <div class="field">
-      <label>Email</label>
-      <input type="email" id="regEmail"
-             placeholder="you@company.com" autocomplete="email"/>
+      <label>Work Email <span style="color:#de350b">*</span></label>
+      <input type="email" id="regEmail" placeholder="you@company.com"/>
     </div>
     <div class="field">
-      <label>Password <span style="color:#6b778c;font-weight:400">(min 6 chars)</span></label>
-      <input type="password" id="regPwd"
-             placeholder="••••••••" autocomplete="new-password"/>
-    </div>
-    <div class="field">
-      <label>Role</label>
+      <label>Role <span style="color:#de350b">*</span></label>
       <select id="regRole">
         <option value="SDET">SDET</option>
-        <option value="SDE">SDE</option>
+        <option value="QA Lead">QA Lead</option>
         <option value="Manager">Manager</option>
       </select>
     </div>
-    <button class="btn" id="regBtn" onclick="doRegister()">
-      Create Account
+    <!-- ✅ NEW: Reports To field -->
+    <div class="field">
+      <label>Reports To — Manager's Email
+        <span style="color:#6b778c;font-weight:400">(optional)</span>
+      </label>
+      <input type="email" id="regManagerEmail"
+             placeholder="your.manager@company.com"/>
+      <div class="hint">
+        💡 Enter your direct manager's email so they can view your metrics.
+        Leave blank if you have no manager in this system.
+      </div>
+    </div>
+    <div class="field">
+      <label>Create Password <span style="color:#de350b">*</span></label>
+      <input type="password" id="regPassword"
+             placeholder="Min 4 characters"
+             oninput="checkStrength(this.value)"/>
+      <div class="pw-strength" id="pwStrength"></div>
+      <div class="pw-strength-lbl" id="pwStrengthLbl"></div>
+    </div>
+    <button class="btn btn-success" id="registerBtn" onclick="register()">
+      ✨ Create My Account
     </button>
-    <div class="error" id="regErr"></div>
+    <div class="footer-note" style="margin-top:14px">
+      Already have an account?
+      <a href="#" onclick="switchTab('login');return false">Sign in →</a>
+    </div>
+  </div>
+
+  <!-- ── FORGOT PASSWORD PANEL ── -->
+  <div class="panel" id="panel-forgot">
+    <div id="forgotStep1">
+      <button class="back-link"
+              onclick="switchTab('login');return false">
+        ← Back to Sign In
+      </button>
+      <div id="forgotAlert"></div>
+      <p style="font-size:13px;color:#6b778c;margin-bottom:18px;
+                line-height:1.6">
+        Enter your registered email address. A reset link will be
+        generated for you to set a new password.
+      </p>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="forgotEmail"
+               placeholder="you@company.com"
+               onkeydown="if(event.key==='Enter')requestReset()"/>
+      </div>
+      <button class="btn" id="forgotBtn" onclick="requestReset()">
+        🔑 Generate Reset Link
+      </button>
+    </div>
+    <div id="forgotStep2" style="display:none">
+      <div class="alert alert-ok" style="margin-bottom:16px">
+        ✅ Reset link generated! Copy the link below and open it in your
+        browser.<br/><strong>⏰ Expires in 1 hour.</strong>
+      </div>
+      <p style="font-size:12px;font-weight:600;color:#6b778c;
+                margin-bottom:8px;text-transform:uppercase;
+                letter-spacing:.5px">Your Reset Link</p>
+      <div class="reset-link-box" id="resetLinkDisplay">—</div>
+      <button class="copy-btn" id="copyBtn" onclick="copyResetLink()">
+        📋 Copy Reset Link
+      </button>
+      <div class="footer-note" style="margin-top:18px">
+        <a href="#" onclick="switchTab('login');return false">
+          ← Back to Sign In
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-  // Already logged in? Go straight to dashboard
-  if (localStorage.getItem('token')) location.href = '/dashboard';
+  if (localStorage.getItem('pm_token')) {
+    window.location.replace('/user')
+  }
+
+  let generatedResetLink = ''
 
   function switchTab(tab) {
-    const isSignIn = tab === 'signin';
-    document.getElementById('tabSignIn').classList.toggle('active',  isSignIn);
-    document.getElementById('tabSignUp').classList.toggle('active', !isSignIn);
-    document.getElementById('paneSignIn').classList.toggle('active',  isSignIn);
-    document.getElementById('paneSignUp').classList.toggle('active', !isSignIn);
+    ['login','register','forgot'].forEach(t => {
+      document.getElementById(`panel-${t}`)
+              .classList.toggle('active', t === tab)
+    })
+    document.getElementById('mainTabs').style.display =
+      tab === 'forgot' ? 'none' : ''
+    document.getElementById('tab-login')
+            .classList.toggle('active', tab === 'login')
+    document.getElementById('tab-register')
+            .classList.toggle('active', tab === 'register')
+    document.getElementById('loginAlert').innerHTML    = ''
+    document.getElementById('registerAlert').innerHTML = ''
+    document.getElementById('forgotAlert').innerHTML   = ''
+    if (tab === 'forgot') {
+      document.getElementById('forgotStep1').style.display = ''
+      document.getElementById('forgotStep2').style.display = 'none'
+      document.getElementById('forgotEmail').value         = ''
+    }
   }
 
-  // ── Login ──────────────────────────────────────────────────────────────
-  async function doLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const pwd   = document.getElementById('loginPwd').value;
-    const err   = document.getElementById('loginErr');
-    const btn   = document.getElementById('loginBtn');
-
-    err.style.display = 'none';
-    if (!email || !pwd) {
-      err.textContent   = 'Please enter your email and password.';
-      err.style.display = 'block';
-      return;
+  async function login() {
+    const email    = document.getElementById('loginEmail').value.trim()
+    const password = document.getElementById('loginPassword').value
+    if (!email || !password) {
+      showAlert('loginAlert','err','⚠️ Enter your email and password.')
+      return
     }
-
-    btn.disabled    = true;
-    btn.textContent = 'Signing in…';
-
+    const btn = startLoading('loginBtn','Signing in…')
+    clearAlert('loginAlert')
     try {
-      const r = await fetch('/auth/login', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, password: pwd }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || 'Login failed');
-      localStorage.setItem('token', data.access_token);
-      location.href = '/dashboard';
-    } catch (e) {
-      err.textContent   = '❌ ' + e.message;
-      err.style.display = 'block';
-      btn.disabled      = false;
-      btn.textContent   = 'Sign In';
-    }
+      const d = await post('/api/auth/login', { email, password })
+      localStorage.setItem('pm_token', d.token)
+      window.location.replace('/user')
+    } catch(e) {
+      showAlert('loginAlert','err','❌ ' + errMsg(e))
+    } finally { stopLoading(btn, '🔐 Sign In') }
   }
 
-  // ── Register ───────────────────────────────────────────────────────────
-  async function doRegister() {
-    const name  = document.getElementById('regName').value.trim();
-    const email = document.getElementById('regEmail').value.trim();
-    const pwd   = document.getElementById('regPwd').value;
-    const role  = document.getElementById('regRole').value;
-    const err   = document.getElementById('regErr');
-    const btn   = document.getElementById('regBtn');
+  async function register() {
+    const name         = document.getElementById('regName').value.trim()
+    const email        = document.getElementById('regEmail').value.trim()
+    const role         = document.getElementById('regRole').value
+    const managerEmail = document.getElementById('regManagerEmail')
+                                 .value.trim()
+    const password     = document.getElementById('regPassword').value
 
-    err.style.display = 'none';
-
-    if (!name || !email || !pwd) {
-      err.textContent   = 'Please fill in all fields.';
-      err.style.display = 'block';
-      return;
+    if (!name) {
+      showAlert('registerAlert','err','⚠️ Please enter your full name.')
+      return
     }
-    if (pwd.length < 6) {
-      err.textContent   = 'Password must be at least 6 characters.';
-      err.style.display = 'block';
-      return;
+    if (!email) {
+      showAlert('registerAlert','err','⚠️ Please enter your work email.')
+      return
     }
-
-    btn.disabled    = true;
-    btn.textContent = 'Creating account…';
-
+    if (!password || password.length < 4) {
+      showAlert('registerAlert','err',
+                '⚠️ Password must be at least 4 characters.')
+      return
+    }
+    const btn = startLoading('registerBtn','Creating account…')
+    clearAlert('registerAlert')
     try {
-      const r = await fetch('/auth/register', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          email, password: pwd, display_name: name, role,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || 'Registration failed');
-      localStorage.setItem('token', data.access_token);
-      location.href = '/dashboard';
-    } catch (e) {
-      err.textContent   = '❌ ' + e.message;
-      err.style.display = 'block';
-      btn.disabled      = false;
-      btn.textContent   = 'Create Account';
-    }
+      const d = await post('/api/auth/register', {
+        name, email, role, password,
+        manager_email: managerEmail   // ← send manager email
+      })
+      showAlert('registerAlert','ok',
+        `✅ Welcome, ${d.user.name}! Redirecting…`)
+      localStorage.setItem('pm_token', d.token)
+      setTimeout(() => window.location.replace('/user'), 1200)
+    } catch(e) {
+      showAlert('registerAlert','err','❌ ' + errMsg(e))
+    } finally { stopLoading(btn,'✨ Create My Account') }
   }
 
-  // Allow Enter key to submit
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    const active = document.querySelector('.tab-pane.active').id;
-    if (active === 'paneSignIn') doLogin();
-    else doRegister();
-  });
+  async function requestReset() {
+    const email = document.getElementById('forgotEmail').value.trim()
+    if (!email) {
+      showAlert('forgotAlert','err','⚠️ Please enter your email address.')
+      return
+    }
+    const btn = startLoading('forgotBtn','Generating link…')
+    clearAlert('forgotAlert')
+    try {
+      const d = await post('/api/auth/forgot-password', { email })
+      if (d.reset_url) {
+        generatedResetLink = window.location.origin + d.reset_url
+        document.getElementById('resetLinkDisplay').textContent =
+          generatedResetLink
+        document.getElementById('forgotStep1').style.display = 'none'
+        document.getElementById('forgotStep2').style.display = ''
+      } else {
+        showAlert('forgotAlert','info',
+          'ℹ️ If that email is registered, a reset link will be shown here.')
+      }
+    } catch(e) {
+      showAlert('forgotAlert','err','❌ ' + errMsg(e))
+    } finally { stopLoading(btn,'🔑 Generate Reset Link') }
+  }
+
+  function copyResetLink() {
+    if (!generatedResetLink) return
+    navigator.clipboard.writeText(generatedResetLink)
+      .then(() => {
+        const btn = document.getElementById('copyBtn')
+        const orig = btn.textContent
+        btn.textContent = '✅ Copied!'
+        setTimeout(() => { btn.textContent = orig }, 2000)
+      })
+      .catch(() => {
+        const ta = document.createElement('textarea')
+        ta.value = generatedResetLink
+        document.body.appendChild(ta); ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        document.getElementById('copyBtn').textContent = '✅ Copied!'
+      })
+  }
+
+  function checkStrength(pw) {
+    const bar = document.getElementById('pwStrength')
+    const lbl = document.getElementById('pwStrengthLbl')
+    if (!pw) { bar.className='pw-strength'; lbl.textContent=''; return }
+    const score = [pw.length>=8,/[A-Z]/.test(pw),/[a-z]/.test(pw),
+                   /[0-9]/.test(pw),/[^A-Za-z0-9]/.test(pw)]
+                  .filter(Boolean).length
+    if (score<=2) { bar.className='pw-strength weak';
+                    lbl.textContent='🔴 Weak password' }
+    else if (score<=3) { bar.className='pw-strength fair';
+                         lbl.textContent='🟡 Fair password' }
+    else { bar.className='pw-strength strong';
+           lbl.textContent='🟢 Strong password' }
+  }
+
+  function showAlert(id,type,msg){
+    document.getElementById(id).innerHTML=
+      `<div class="alert alert-${type}">${msg}</div>`
+  }
+  function clearAlert(id){ document.getElementById(id).innerHTML='' }
+  function errMsg(e){
+    if(!e) return 'Unknown error'
+    return typeof e.message==='string'?e.message:String(e)
+  }
+  function startLoading(btnId,txt){
+    const b=document.getElementById(btnId)
+    b._orig=b.textContent;b.disabled=true;b.textContent=txt;return b
+  }
+  function stopLoading(b,orig){ b.disabled=false;b.textContent=orig||b._orig }
+  async function post(url,body){
+    const r=await fetch(url,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)})
+    const d=await r.json()
+    if(!r.ok) throw new Error(d.detail||'Request failed')
+    return d
+  }
 </script>
 </body>
 </html>

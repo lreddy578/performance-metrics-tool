@@ -3,502 +3,667 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Performance Metrics</title>
+  <title>Performance Metrics — Dashboard</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;color:#172b4d}
+    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
+         color:#172b4d;min-height:100vh}
 
-    .header{background:#0052cc;color:#fff;padding:14px 24px;
-            display:flex;justify-content:space-between;align-items:center;
-            flex-wrap:wrap;gap:8px}
-    .header h1{font-size:18px;font-weight:600}
-    .hright{display:flex;gap:10px;align-items:center;font-size:13px;
-            flex-wrap:wrap}
-    .badge{background:rgba(255,255,255,.2);padding:3px 12px;
-           border-radius:20px}
+    .header{background:#0052cc;color:#fff;padding:14px 28px;
+            display:flex;align-items:center;justify-content:space-between;
+            flex-wrap:wrap;gap:10px}
+    .header h1{font-size:20px;font-weight:600}
+    .header-sub{font-size:13px;opacity:.8;margin-left:10px}
+    .nav-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .nav-link{color:#fff;text-decoration:none;
+              background:rgba(255,255,255,.18);padding:8px 16px;
+              border-radius:4px;font-size:13px;font-weight:500;
+              transition:background .15s}
+    .nav-link:hover{background:rgba(255,255,255,.28)}
+    .btn-logout{background:rgba(222,53,11,.7);color:#fff;border:none;
+                padding:8px 16px;border-radius:4px;cursor:pointer;
+                font-size:13px;font-weight:500;transition:background .15s}
+    .btn-logout:hover{background:rgba(222,53,11,1)}
 
-    .btn{padding:6px 14px;border-radius:4px;cursor:pointer;
-         border:none;font-size:13px;font-weight:500;transition:opacity .15s}
-    .btn-ghost{background:rgba(255,255,255,.15);color:#fff;
-               border:1px solid rgba(255,255,255,.3)}
-    .btn-blue{background:#0052cc;color:#fff}
-    .btn-blue:hover{background:#0065ff}
-    .btn-blue:disabled{background:#a5adba;cursor:not-allowed}
-    .btn-purple{background:#6554c0;color:#fff}
+    .container{max-width:1400px;margin:24px auto;padding:0 20px}
+    .card{background:#fff;border-radius:8px;padding:20px 24px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
 
-    .container{max-width:1100px;margin:24px auto;padding:0 16px}
-    .controls{display:flex;gap:12px;align-items:center;
-              margin-bottom:20px;flex-wrap:wrap}
-    .controls select{padding:8px 12px;border:1px solid #dfe1e6;
-                     border-radius:4px;font-size:14px}
+    .btn{padding:9px 18px;border:none;border-radius:4px;cursor:pointer;
+         font-size:13px;font-weight:600;display:inline-flex;
+         align-items:center;gap:6px;transition:background .15s,opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-ghost{background:#f4f5f7;color:#344563;border:1px solid #dfe1e6}
+    .btn-ghost:hover:not(:disabled){background:#ebecf0}
+    .btn-sm{padding:5px 11px;font-size:12px}
 
-    .scores{display:grid;grid-template-columns:repeat(3,1fr);
-            gap:16px;margin-bottom:24px}
-    .score-card{background:#fff;border-radius:8px;padding:20px;
-                text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-    .score-val{font-size:30px;font-weight:700;color:#0052cc}
-    .score-lbl{font-size:12px;color:#6b778c;margin-top:4px}
+    select{padding:9px 14px;border:1px solid #dfe1e6;border-radius:4px;
+           font-size:14px;color:#172b4d;background:#fff;
+           cursor:pointer;min-width:260px}
+    select:focus{outline:none;border-color:#0052cc}
 
-    .tab-nav{display:flex;border-bottom:2px solid #dfe1e6;margin-bottom:20px}
-    .tab-btn{padding:10px 28px;border:none;background:none;cursor:pointer;
-             font-size:14px;font-weight:500;color:#6b778c;
-             border-bottom:3px solid transparent;margin-bottom:-2px;
-             transition:color .15s,border-color .15s}
-    .tab-btn:hover{color:#0052cc}
-    .tab-btn.active{color:#0052cc;border-bottom-color:#0052cc;
-                    background:#fff;border-radius:4px 4px 0 0}
-    .tab-pane{display:none}
-    .tab-pane.active{display:block}
+    /* Super-viewer badge */
+    .sv-badge{background:rgba(255,255,255,.2);color:#fff;
+              padding:3px 10px;border-radius:10px;font-size:11px;
+              font-weight:700;margin-left:8px;
+              border:1px solid rgba(255,255,255,.4)}
 
-    .section{background:#fff;border-radius:8px;padding:20px;
-             margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-    .sec-title{font-size:15px;font-weight:600;margin-bottom:16px;
-               display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .tag{font-size:11px;padding:2px 8px;border-radius:10px}
-    .tag-green {background:#e3fcef;color:#006644}
-    .tag-yellow{background:#fffae6;color:#974f0c}
-    .tag-blue  {background:#deebff;color:#0052cc}
+    /* Tiles */
+    .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+           margin-bottom:20px}
+    @media(max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}}
+    .tile{background:#fff;border-radius:8px;padding:18px 20px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
+    .tile .val{font-size:28px;font-weight:700;color:#0052cc}
+    .tile .lbl{font-size:12px;color:#6b778c;margin-top:4px}
 
-    .tbl-head{display:grid;
-              grid-template-columns:2.5fr 1fr 1fr 1fr 2fr;
-              gap:8px;padding:8px 0;font-size:11px;font-weight:700;
-              color:#6b778c;text-transform:uppercase;
-              border-bottom:2px solid #dfe1e6}
-    .tbl-row{display:grid;
-             grid-template-columns:2.5fr 1fr 1fr 1fr 2fr;
-             gap:8px;align-items:center;padding:10px 0 4px 0;
-             font-size:13px}
-    .center{text-align:center}
-    .wt-pos{color:#006644;font-weight:600;text-align:center}
-    .wt-neg{color:#bf2600;font-weight:600;text-align:center}
+    /* Filter bar */
+    .filter-bar{display:flex;gap:10px;flex-wrap:wrap;
+                align-items:center;margin-bottom:16px}
+    .filter-bar input[type=text],
+    .filter-bar input[type=date]{
+      padding:8px 12px;border:1px solid #dfe1e6;border-radius:4px;
+      font-size:13px;color:#172b4d;background:#fff}
+    .filter-bar input:focus{outline:none;border-color:#0052cc}
+    .filter-label{font-size:12px;font-weight:600;color:#6b778c;
+                  white-space:nowrap}
 
-    .prog{display:flex;align-items:center;gap:6px}
-    .prog-bar{flex:1;height:8px;background:#dfe1e6;
-              border-radius:4px;overflow:hidden}
-    .prog-fill{height:100%;border-radius:4px;transition:width .4s}
-    .fill-g{background:#36b37e}
-    .fill-w{background:#ff8b00}
-    .fill-b{background:#de350b}
-    .prog-pct{font-size:11px;color:#6b778c;min-width:32px}
+    .tbl-header{display:flex;align-items:center;
+                justify-content:space-between;
+                margin-bottom:14px;flex-wrap:wrap;gap:8px}
+    .tbl-header h3{font-size:15px;font-weight:600}
+    .badge{background:#ebecf0;color:#6b778c;padding:2px 10px;
+           border-radius:10px;font-size:12px}
 
-    .num-input{width:72px;padding:5px 8px;border:1px solid #dfe1e6;
-               border-radius:4px;font-size:13px;text-align:center}
-    .num-input:focus{outline:none;border-color:#0052cc;
-                     box-shadow:0 0 0 2px rgba(0,82,204,.12)}
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px;min-width:1000px}
+    thead th{background:#f8f9fa;padding:11px 14px;text-align:left;
+             font-size:11px;font-weight:700;color:#6b778c;
+             text-transform:uppercase;letter-spacing:.5px;
+             border-bottom:2px solid #dfe1e6;white-space:nowrap;
+             cursor:pointer;user-select:none}
+    thead th:hover{background:#ebecf0}
+    thead th.sorted-asc::after {content:' ▲';font-size:10px}
+    thead th.sorted-desc::after{content:' ▼';font-size:10px}
+    tbody td{padding:10px 14px;border-bottom:1px solid #f4f5f7;
+             vertical-align:middle}
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr:hover td{background:#f8f9fa}
+    .num{text-align:right}
+    .note-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;
+               white-space:nowrap;color:#6b778c;font-style:italic}
 
-    /* Comment row — only shown in Manual + Tab 2 sections */
-    .metric-block{border-bottom:1px solid #f4f5f7;padding-bottom:4px}
-    .metric-block:last-child{border-bottom:none}
-    .comment-row{padding:2px 0 10px 0;display:flex;
-                 align-items:flex-start;gap:6px}
-    .comment-icon{font-size:12px;color:#a5adba;padding-top:8px;
-                  flex-shrink:0}
-    .comment-input{flex:1;min-height:52px;padding:7px 10px;
-                   border:1px solid #dfe1e6;border-radius:4px;
-                   font-size:12px;font-family:inherit;resize:vertical;
-                   color:#172b4d;background:#fafbfc;line-height:1.5}
-    .comment-input:focus{outline:none;border-color:#0052cc;background:#fff;
-                         box-shadow:0 0 0 2px rgba(0,82,204,.1)}
-    .comment-input::placeholder{color:#c1c7d0}
+    .empty{text-align:center;padding:50px 20px;color:#6b778c}
+    .empty .icon{font-size:40px;margin-bottom:10px}
+    mark{background:#fff0b3;border-radius:2px;padding:0 2px}
 
-    .save-row{margin-top:14px;display:flex;align-items:center;
-              gap:12px;flex-wrap:wrap}
-    .status-msg{font-size:13px;padding:8px 14px;border-radius:4px;
-                display:none}
-    .st-ok {background:#e3fcef;color:#006644;display:block}
-    .st-err{background:#ffebe6;color:#bf2600;display:block}
+    /* User info chip under dropdown */
+    .user-chip{display:none;align-items:center;gap:10px;
+               background:#f8f9fa;border-radius:6px;padding:10px 14px;
+               margin-top:10px;font-size:13px}
+    .user-chip.show{display:flex}
+    .chip-name{font-weight:600}
+    .chip-meta{color:#6b778c;font-size:12px}
+    .role-pill{padding:2px 10px;border-radius:20px;font-size:11px;
+               font-weight:600;background:#deebff;color:#0052cc}
+    .mgr-pill{padding:2px 10px;border-radius:20px;font-size:11px;
+              font-weight:600;background:#fff0b3;color:#974f0c}
 
-    .loading{text-align:center;padding:20px;color:#6b778c}
-    .sync-error{color:#bf2600;padding:12px;background:#ffebe6;
-                border-radius:4px;font-size:13px}
-    .info-banner{background:#deebff;color:#0052cc;padding:10px 14px;
-                 border-radius:6px;font-size:13px;margin-bottom:16px;
-                 border-left:4px solid #0052cc}
-
-    @media(max-width:640px){
-      .tbl-head,.tbl-row{grid-template-columns:1fr 1fr;font-size:12px}
-      .scores{grid-template-columns:1fr}
-      .tab-btn{padding:8px 14px;font-size:13px}
-    }
+    /* Inline Jira metrics */
+    .jira-filter-bar{display:flex;gap:10px;flex-wrap:wrap;
+                     align-items:end;margin-bottom:16px}
+    .jira-filter-bar input{padding:7px 10px;border:1px solid #dfe1e6;
+                           border-radius:6px;font-size:13px;min-width:150px}
+    .jira-filter-field{display:flex;flex-direction:column;gap:4px}
+    .jira-filter-field label{font-size:12px;color:#6b778c;font-weight:600}
+    .jira-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+              gap:16px}
+    .jira-card{background:#fff;border:1px solid #ebecf0;border-radius:10px;
+              padding:18px;text-align:center}
+    .jira-card .jira-label{font-size:.85rem;color:#666}
+    .jira-card .jira-count{font-size:2rem;font-weight:bold;margin:8px 0}
+    .jira-link{color:#0052cc;display:inline-block;font-size:12px;
+              font-weight:600;margin-top:4px;text-decoration:none}
+    .jira-link:hover{text-decoration:underline}
+    .jira-toggle{background:#f4f5f7;border:1px solid #dfe1e6;border-radius:5px;
+                 color:#172b4d;cursor:pointer;font-size:12px;margin-top:8px;
+                 padding:6px 10px}
+    .jira-toggle:hover{background:#ebecf0}
+    .jira-details{border-top:1px solid #ebecf0;margin-top:12px;
+                  padding-top:10px;text-align:left}
+    .jira-space-table{border-collapse:collapse;width:100%}
+    .jira-space-table td{border-bottom:1px solid #ebecf0;font-size:12px;
+                         padding:6px 2px}
+    .jira-space-table td:last-child{font-weight:600;text-align:right}
+    .jira-loading,.jira-error{text-align:center;padding:24px;color:#6b778c}
+    .jira-error{color:#bf2600}
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>📊 My Performance Metrics</h1>
-  <div class="hright">
-    <span id="uName">…</span>
-    <span class="badge" id="uRole">…</span>
-    <span id="managerBtn"></span>
-    <button class="btn btn-ghost" onclick="logout()">Logout</button>
+  <div>
+    <h1 id="dashTitle">📋 Dashboard
+      <span class="header-sub" id="mgrName"></span>
+    </h1>
+  </div>
+  <div class="nav-links">
+    <a href="/user" class="nav-link">← My Metrics</a>
+    <a href="/jira-assignments" class="nav-link">🎫 My Jira Assignments</a>
+    <a href="/admin" class="nav-link" id="adminLink">⚙️ Admin</a>
+    <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
   </div>
 </div>
 
 <div class="container">
 
-  <div class="controls">
-    <strong>Year:</strong>
-    <select id="yr" onchange="loadMetrics()">
-      <option value="2026">2026</option>
-      <option value="2025" selected>2025</option>
-      <option value="2024">2024</option>
-    </select>
-    <button class="btn btn-blue" onclick="loadMetrics()">🔄 Refresh</button>
-  </div>
-
-  <div class="scores">
-    <div class="score-card">
-      <div class="score-val" id="sScore">—</div>
-      <div class="score-lbl">Weighted Score</div>
-    </div>
-    <div class="score-card">
-      <div class="score-val" id="sEntered">—</div>
-      <div class="score-lbl">Metrics Entered</div>
-    </div>
-    <div class="score-card">
-      <div class="score-val" id="sTotal">—</div>
-      <div class="score-lbl">Total Metrics</div>
-    </div>
-  </div>
-
-  <div class="tab-nav">
-    <button class="tab-btn active" id="btnTab1" onclick="switchTab(1)">
-      📊 Live Dashboard
-    </button>
-    <button class="tab-btn" id="btnTab2" onclick="switchTab(2)">
-      ✏️ Manual Entry
-    </button>
-  </div>
-
-  <!-- ══ TAB 1 ══ -->
-  <div id="tab1" class="tab-pane active">
-
-    <!-- Jira section — values read-only, NO comment boxes -->
-    <div class="section">
-      <div class="sec-title">
-        🔗 Jira Metrics
-        <span class="tag tag-green">Auto from Jira</span>
-        <button class="btn btn-blue" id="syncBtn" onclick="syncJira()"
-                style="margin-left:auto;font-size:12px;padding:5px 14px">
-          🔄 Sync from Jira
-        </button>
+  <!-- User selector -->
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;
+                flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <label style="font-weight:700;font-size:13px;white-space:nowrap"
+               id="dropLabel">
+          👤 View Team Member:
+        </label>
+        <select id="reporteeSelect" onchange="onReporteeChange()">
+          <option value="">— Select a person —</option>
+        </select>
       </div>
-      <div id="jiraBox">
-        <div class="loading">
-          Click <strong>🔄 Sync from Jira</strong> to load your metrics.
+      <!-- Info chip shown when someone is selected -->
+      <div class="user-chip" id="userChip">
+        <div>
+          <span class="chip-name" id="chipName">—</span>
+          <span class="chip-meta" id="chipEmail"></span>
         </div>
+        <span class="role-pill" id="chipRole"></span>
+        <span class="mgr-pill" id="chipMgr" style="display:none"></span>
       </div>
     </div>
-
-    <!-- Manual section — values + comments editable -->
-    <div class="section">
-      <div class="sec-title">
-        ✏️ Manual Metrics
-        <span class="tag tag-yellow">Enter Manually</span>
-      </div>
-      <div id="manualBox"><div class="loading">Loading…</div></div>
-      <div class="save-row">
-        <button class="btn btn-blue" onclick="saveTab1Manual()">
-          💾 Save Metrics
-        </button>
-        <div class="status-msg" id="msgTab1"></div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ══ TAB 2 ══ -->
-  <div id="tab2" class="tab-pane">
-    <div class="section">
-      <div class="sec-title">
-        📝 All Metrics — Manual Entry
-        <span class="tag tag-blue">All 7 Metrics</span>
+  <!-- Summary tiles -->
+  <div id="tilesRow" class="tiles" style="display:none">
+    <div class="tile">
+      <div class="val" id="tEntries">—</div>
+      <div class="lbl">Total Entries</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tStories">—</div>
+      <div class="lbl">Avg User Stories</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tDefects">—</div>
+      <div class="lbl">Avg Valid Defects</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tVolunteer">—</div>
+      <div class="lbl">Avg Volunteer Opps</div>
+    </div>
+  </div>
+
+  <!-- Data table -->
+  <div id="tableCard" class="card" style="display:none">
+    <div class="filter-bar">
+      <input type="text" id="searchBox" style="min-width:200px"
+             placeholder="🔍 Search notes or date…"
+             oninput="applyFilters()"/>
+      <span class="filter-label">From:</span>
+      <input type="date" id="dateFrom" onchange="applyFilters()"/>
+      <span class="filter-label">To:</span>
+      <input type="date" id="dateTo"   onchange="applyFilters()"/>
+      <button class="btn btn-ghost btn-sm"
+              onclick="clearFilters()">✕ Clear</button>
+    </div>
+    <div class="tbl-header">
+      <h3>📊 Entries</h3>
+      <span class="badge" id="rowBadge">0 rows</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('_idx')">#</th>
+            <th onclick="sortBy('date')">Date</th>
+            <th onclick="sortBy('time')">Time (UTC)</th>
+            <th onclick="sortBy('user_stories_completed')"
+                class="num">User Stories</th>
+            <th onclick="sortBy('valid_defects')"
+                class="num">Valid Defects</th>
+            <th onclick="sortBy('invalid_defects')"
+                class="num">Invalid Defects</th>
+            <th onclick="sortBy('p0_defects_leaked')"
+                class="num">P0 Leaked</th>
+            <th onclick="sortBy('complex_stories')"
+                class="num">Complex Stories</th>
+            <th onclick="sortBy('volunteer_opportunities')"
+                class="num">Volunteer Opps</th>
+            <th onclick="sortBy('demo_opportunities')"
+                class="num">Demo Opps</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Inline Jira metrics -->
+  <div id="jiraCard" class="card" style="display:none">
+    <div class="jira-filter-bar">
+      <div class="jira-filter-field">
+        <label for="jiraVersion">Release / Fix Version</label>
+        <input type="text" id="jiraVersion" placeholder="e.g. AA.R.4.0.0">
       </div>
-      <div class="info-banner">
-        💡 Enter values and comments for all metrics here.
-           Values saved here will also update the Live Dashboard.
+      <div class="jira-filter-field">
+        <label for="jiraStart">Created From</label>
+        <input type="date" id="jiraStart">
       </div>
-      <div id="allMetricsBox"><div class="loading">Loading…</div></div>
-      <div class="save-row">
-        <button class="btn btn-blue" onclick="saveTab2()">
-          💾 Save All Metrics
-        </button>
-        <div class="status-msg" id="msgTab2"></div>
+      <div class="jira-filter-field">
+        <label for="jiraEnd">Created To</label>
+        <input type="date" id="jiraEnd">
       </div>
+      <button class="btn btn-primary btn-sm" onclick="loadReporteeJira()">Apply</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearJiraFilters()">✕ Clear</button>
+    </div>
+    <div class="tbl-header">
+      <h3>🎫 Jira Metrics</h3>
+      <span class="badge" id="jiraBadge"></span>
+    </div>
+    <div id="jiraContent"></div>
+  </div>
+
+  <!-- Placeholder -->
+  <div id="placeholder" class="card">
+    <div class="empty">
+      <div class="icon">👥</div>
+      <strong id="placeholderMsg">
+        Select a team member above to view their data
+      </strong>
+      <p style="margin-top:8px;color:#6b778c;font-size:13px"
+         id="placeholderSub"></p>
     </div>
   </div>
 
 </div>
 
+<!-- Remove this line: -->
+<!-- <a href="/jira-assignments">📋 My Jira Assignments</a> -->
+
 <script>
-  const token = localStorage.getItem('token');
-  if (!token) location.href = '/';
+  const TOKEN = localStorage.getItem('pm_token')
+  if (!TOKEN) window.location.replace('/login')
 
-  let metrics = [];
+  // ── 🔧 Keep this in sync with SUPER_VIEWERS in app.py ───────────────────
+  const SUPER_VIEWERS = [
+    'lreddy@teampurpose.com',   // ← add more emails here to match app.py
+  ]
+  // ─────────────────────────────────────────────────────────────────────────
 
-  function switchTab(n) {
-    document.getElementById('tab1').classList.toggle('active', n === 1);
-    document.getElementById('tab2').classList.toggle('active', n === 2);
-    document.getElementById('btnTab1').classList.toggle('active', n === 1);
-    document.getElementById('btnTab2').classList.toggle('active', n === 2);
-  }
+  let currentUserId    = null
+  let isSuperViewer    = false
+  let viewableUsers    = []   // populated from API
+  let allEntries       = []
+  let filtered         = []
+  let sortCol          = 'date'
+  let sortDir          = 'desc'
+  let selectedEmail    = null
 
-  async function api(url, opts = {}) {
-    const r = await fetch(url, {
-      ...opts,
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type':  'application/json',
-        ...(opts.headers || {}),
-      },
-    });
-    if (r.status === 401) {
-      localStorage.removeItem('token');
-      location.href = '/';
+  /* ── Boot ── */
+  async function boot() {
+    const me = await apiGet('/api/auth/me')
+
+    isSuperViewer = SUPER_VIEWERS.includes(me.email.toLowerCase())
+
+    currentUserId = me.id
+    document.getElementById('mgrName').textContent = `— ${me.name}`
+
+    // Admin button visibility
+    const ADMIN_EMAIL = 'lreddy@teampurpose.com'
+    document.getElementById('adminLink').style.display =
+      me.email === ADMIN_EMAIL ? '' : 'none'
+
+    // If regular user (not manager, not super-viewer): hide reportee dropdown, show only Jira link
+    if (me.role !== 'Manager' && !isSuperViewer) {
+      // Hide the reportee selector card
+      document.querySelector('.card').style.display = 'none'
+      // Update placeholder to show Jira-only message
+      document.getElementById('placeholderMsg').innerHTML =
+        '🎫 Welcome to your Dashboard!'
+      document.getElementById('placeholderSub').innerHTML =
+        'Click <a href="/jira-assignments" style="color:#0052cc;font-weight:600">📋 My Jira Assignments</a> to view your stories, defects, and bugs from Jira.'
+      return
     }
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.detail || `Server error ${r.status}`);
-    return data;
+
+    // Manager or super-viewer: show reportee dropdown + everything
+    if (isSuperViewer) {
+      document.getElementById('dashTitle').innerHTML =
+        '📋 Dashboard <span id="svBadge" style="background:rgba(255,255,255,.2);' +
+        'color:#fff;padding:3px 10px;border-radius:10px;font-size:11px;' +
+        'font-weight:700;margin-left:8px;border:1px solid rgba(255,255,255,.4)">' +
+        '🌐 All Users View</span>' +
+        '<span class="header-sub" id="mgrNameSpan"> — ' + me.name + '</span>'
+      document.getElementById('dropLabel').textContent = '👤 View User:'
+      document.getElementById('placeholderSub').textContent =
+        'You have director-level access and can view all team members.'
+    } else {
+      document.getElementById('placeholderSub').textContent =
+        'Your reportees are auto-populated based on who listed your email during sign up.'
+    }
+
+    await loadViewableUsers()
   }
 
-  async function init() {
+  /* ── Load dropdown from API ── */
+  async function loadViewableUsers() {
     try {
-      const me = await api('/auth/me');
-      document.getElementById('uName').textContent =
-        me.display_name || me.email;
-      document.getElementById('uRole').textContent = me.role;
-      if (me.is_manager) {
-        document.getElementById('managerBtn').innerHTML =
-          '<button class="btn btn-purple" '
-          + 'onclick="location.href=\'/manager\'">👥 Team View</button>';
+      viewableUsers = await apiGet('/api/dashboard/viewable-users')
+      const sel   = document.getElementById('reporteeSelect')
+      const prev  = sel.value
+      sel.innerHTML = '<option value="">— Select a person —</option>'
+
+      if (!viewableUsers.length) {
+        const o = document.createElement('option')
+        o.disabled    = true
+        o.textContent = isSuperViewer
+          ? '(no other users in system)'
+          : '(no reportees — team members must sign up with your email)'
+        sel.appendChild(o)
+        document.getElementById('placeholderMsg').textContent =
+          isSuperViewer
+            ? 'No other users in the system yet.'
+            : 'No reportees yet. Ask your team to sign up using your email.'
+        return
       }
-      await loadMetrics();
-    } catch (err) {
-      console.error('Init error:', err.message);
-    }
-  }
 
-  async function loadMetrics() {
-    const yr = document.getElementById('yr').value;
-    try {
-      metrics = await api('/api/metrics/my?year=' + yr);
-      render();
-    } catch (err) {
-      console.error('Load error:', err.message);
-    }
-  }
-
-  async function syncJira() {
-    const yr  = document.getElementById('yr').value;
-    const btn = document.getElementById('syncBtn');
-    const box = document.getElementById('jiraBox');
-
-    btn.disabled    = true;
-    btn.textContent = '⏳ Syncing…';
-    box.innerHTML   =
-      '<div class="loading">⏳ Fetching your issues from Jira…</div>';
-
-    try {
-      const resp = await api(
-        '/api/jira/sync-metrics?year=' + yr,
-        { method: 'POST' }
-      );
-      if (resp.success) {
-        await loadMetrics();
-        const msg = document.getElementById('msgTab1');
-        msg.className   = 'status-msg st-ok';
-        msg.textContent =
-          `✅ Synced! Found ${resp.issues_found} Jira issues for ${yr}.`;
-        setTimeout(() => { msg.className = 'status-msg'; }, 5000);
+      viewableUsers.forEach(u => {
+        const o = document.createElement('option')
+        o.value       = u.id
+        o.textContent = `${u.name}  (${u.role})`
+        sel.appendChild(o)
+      })
+      // Restore previous selection
+      if (prev && sel.querySelector(`option[value="${prev}"]`)) {
+        sel.value = prev
+        onReporteeChange()
       }
-    } catch (err) {
-      box.innerHTML =
-        `<div class="sync-error">❌ <strong>Sync failed:</strong> `
-        + `${err.message}</div>`;
+    } catch(e) {
+      document.getElementById('placeholderMsg').textContent =
+        '❌ Failed to load users: ' + errMsg(e)
+    }
+  }
+
+  /* ── Reportee/user change ── */
+  async function onReporteeChange() {
+    const rid = document.getElementById('reporteeSelect').value
+    if (!rid) {
+      hide('tilesRow'); hide('tableCard'); hide('jiraCard'); show('placeholder')
+      document.getElementById('userChip').classList.remove('show')
+      selectedEmail = null
+      return
+    }
+    // Show info chip
+    const u = viewableUsers.find(x => String(x.id) === String(rid))
+    if (u) {
+      document.getElementById('chipName').textContent  = u.name
+      document.getElementById('chipEmail').textContent = u.email
+      document.getElementById('chipRole').textContent  = u.role
+      const mgrEl = document.getElementById('chipMgr')
+      if (u.manager_email) {
+        mgrEl.textContent    = `Reports to: ${u.manager_email}`
+        mgrEl.style.display  = ''
+      } else {
+        mgrEl.style.display  = 'none'
+      }
+      document.getElementById('userChip').classList.add('show')
+    }
+
+    selectedEmail = u ? u.email : null
+    const resp = await apiGet(`/api/metrics/${parseInt(rid)}`)
+    allEntries = resp.entries
+    updateTiles(allEntries)
+    show('tilesRow'); show('tableCard'); hide('placeholder')
+    applyFilters()
+
+    if (selectedEmail) {
+      clearJiraFilters()
+    } else {
+      hide('jiraCard')
+    }
+  }
+
+  /* ── Inline Jira metrics ── */
+  const JIRA_CARDS = [
+    { key:'stories_assigned', label:'Stories Assigned' },
+    { key:'defects_assigned', label:'Defects Assigned' },
+    { key:'defects_reported', label:'Defects Reported' },
+    { key:'bugs_assigned', label:'Bugs Assigned' },
+    { key:'bugs_reported', label:'Bugs Reported' },
+    { key:'test_tasks_assigned', label:'Tests Assigned' },
+    { key:'test_plans_assigned', label:'Test Plans Assigned' },
+    { key:'test_executions_assigned', label:'Test Executions Assigned' }
+  ]
+
+  function clearJiraFilters() {
+    document.getElementById('jiraVersion').value = ''
+    document.getElementById('jiraStart').value   = ''
+    document.getElementById('jiraEnd').value     = ''
+    loadReporteeJira()
+  }
+
+  async function loadReporteeJira() {
+    if (!selectedEmail) return
+    show('jiraCard')
+    const contentEl = document.getElementById('jiraContent')
+    const badgeEl   = document.getElementById('jiraBadge')
+    contentEl.innerHTML = '<div class="jira-loading">Loading Jira metrics…</div>'
+    badgeEl.textContent = ''
+
+    const params = new URLSearchParams({ email: selectedEmail })
+    const version = document.getElementById('jiraVersion').value.trim()
+    const start   = document.getElementById('jiraStart').value
+    const end     = document.getElementById('jiraEnd').value
+    if (version) params.set('fix_version', version)
+    if (start)   params.set('start_date', start)
+    if (end)     params.set('end_date', end)
+
+    try {
+      const data = await apiGet(`/api/jira/assignments?${params.toString()}`)
+      badgeEl.textContent = selectedEmail
+      const links  = data.search_links     || {}
+      const spaces = data.space_breakdowns || {}
+      contentEl.innerHTML = `<div class="jira-grid">${
+        JIRA_CARDS.map(c => renderJiraCard(c, data, links, spaces)).join('')
+      }</div>`
+    } catch(e) {
+      contentEl.innerHTML = `<div class="jira-error">❌ ${errMsg(e)}</div>`
+    }
+  }
+
+  function renderJiraCard(card, data, links, spaces) {
+    return `
+      <div class="jira-card">
+        <div class="jira-label">${card.label}</div>
+        <div class="jira-count">${data[card.key] ?? '—'}</div>
+        ${renderJiraLink(links[card.key])}
+        <button class="jira-toggle" type="button" aria-expanded="false"
+                onclick="toggleJiraSpaces(this)">Show by space</button>
+        <div hidden>${renderJiraSpaceDetails(spaces[card.key])}</div>
+      </div>`
+  }
+  function renderJiraLink(url) {
+    if (!url) return ''
+    return `<a class="jira-link" href="${url}" target="_blank" rel="noopener">Open Jira search</a>`
+  }
+  function renderJiraSpaceDetails(rows) {
+    if (!rows || !rows.length) return '<div class="jira-details">No items found</div>'
+    const trs = rows.map(r => `<tr><td>${r.space}</td><td>${r.count}</td></tr>`).join('')
+    return `<div class="jira-details"><table class="jira-space-table"><tbody>${trs}</tbody></table></div>`
+  }
+  function toggleJiraSpaces(button) {
+    const details  = button.nextElementSibling
+    const expanded = button.getAttribute('aria-expanded') === 'true'
+    button.setAttribute('aria-expanded', String(!expanded))
+    button.textContent = expanded ? 'Show by space' : 'Hide by space'
+    details.hidden = expanded
+  }
+  function updateTiles(rows) {
+    document.getElementById('tEntries').textContent  = rows.length
+    document.getElementById('tStories').textContent  =
+      avg(rows,'user_stories_completed')
+    document.getElementById('tDefects').textContent  =
+      avg(rows,'valid_defects')
+    document.getElementById('tVolunteer').textContent =
+      avg(rows,'volunteer_opportunities')
+  }
+  function avg(rows,field){
+    const vals=rows.map(r=>r[field]).filter(v=>v!=null)
+    if(!vals.length) return '—'
+    return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)
+  }
+
+  /* ── Filters ── */
+  function applyFilters() {
+    const q    = document.getElementById('searchBox').value.toLowerCase().trim()
+    const from = document.getElementById('dateFrom').value
+    const to   = document.getElementById('dateTo').value
+    filtered   = allEntries.filter(e => {
+      if (from && e.date < from) return false
+      if (to   && e.date > to)   return false
+      if (q && !`${e.date} ${e.notes||''}`.toLowerCase().includes(q))
+        return false
+      return true
+    })
+    applySort()
+  }
+  function clearFilters() {
+    document.getElementById('searchBox').value = ''
+    document.getElementById('dateFrom').value  = ''
+    document.getElementById('dateTo').value    = ''
+    applyFilters()
+  }
+
+  /* ── Sort ── */
+  function sortBy(col) {
+    sortDir = (sortCol===col && sortDir==='desc') ? 'asc' : 'desc'
+    sortCol = col
+    document.querySelectorAll('thead th').forEach(th => {
+      th.classList.remove('sorted-asc','sorted-desc')
+      if ((th.getAttribute('onclick')||'').includes(`'${col}'`))
+        th.classList.add(sortDir==='asc'?'sorted-asc':'sorted-desc')
+    })
+    applySort()
+  }
+  function applySort() {
+    const rows = [...filtered]
+    rows.sort((a,b)=>{
+      const key = sortCol==='_idx'||sortCol==='time' ? 'timestamp' : sortCol
+      const va=a[key]??'', vb=b[key]??''
+      return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0
+    })
+    renderRows(rows)
+  }
+
+  /* ── Render rows ── */
+  function renderRows(rows) {
+    const q = document.getElementById('searchBox').value.trim()
+    document.getElementById('rowBadge').textContent =
+      `${rows.length} row${rows.length!==1?'s':''}`
+    const tbody = document.getElementById('tbody')
+    if (!rows.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="11"
+                style="text-align:center;padding:40px;color:#6b778c">
+          😕 No entries match your filters.
+        </td></tr>`
+      return
+    }
+    tbody.innerHTML = rows.map((e,i) => `
+      <tr>
+        <td style="color:#6b778c">${i+1}</td>
+        <td><strong>${hl(e.date||'—',q)}</strong></td>
+        <td style="color:#6b778c;font-size:12px">
+          ${(e.timestamp||'').substring(11,19)||'—'}
+        </td>
+        <td class="num">${fv(e.user_stories_completed)}</td>
+        <td class="num">${fv(e.valid_defects)}</td>
+        <td class="num">${fv(e.invalid_defects)}</td>
+        <td class="num">${fv(e.p0_defects_leaked)}</td>
+        <td class="num">${fv(e.complex_stories)}</td>
+        <td class="num">${fv(e.volunteer_opportunities)}</td>
+        <td class="num">${fv(e.demo_opportunities)}</td>
+        <td class="note-cell" title="${esc(e.notes)}">
+          ${hl(esc(e.notes||''),q)||'—'}
+        </td>
+      </tr>`).join('') + buildTotalsRow(rows)
+  }
+
+  /* ── Totals row ── */
+  const NUMERIC_FIELDS = [
+    'user_stories_completed', 'valid_defects', 'invalid_defects',
+    'p0_defects_leaked', 'complex_stories', 'volunteer_opportunities',
+    'demo_opportunities'
+  ]
+  function buildTotalsRow(rows) {
+    if (!rows.length) return ''
+    const sums = NUMERIC_FIELDS.map(f =>
+      rows.reduce((s, e) => s + (e[f] != null ? e[f] : 0), 0))
+    return `
+      <tr style="font-weight:700;background:#f4f5f7">
+        <td colspan="3">Total</td>
+        ${sums.map(s => `<td class="num">${s}</td>`).join('')}
+        <td class="note-cell"></td>
+      </tr>`
+  }
+
+  /* ── Logout ── */
+  async function logout() {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      })
     } finally {
-      btn.disabled    = false;
-      btn.textContent = '🔄 Sync from Jira';
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login')
     }
   }
 
-  function pct(a, t) {
-    return t > 0 ? Math.min(Math.round((a / t) * 100), 100) : 0;
-  }
-  function fillCls(p) {
-    return p >= 80 ? 'fill-g' : p >= 50 ? 'fill-w' : 'fill-b';
-  }
+  /* ── Helpers ── */
+  function fv(v)  { return v!=null?v:'—' }
   function esc(s) {
-    return (s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+  function hl(text,q) {
+    if(!q||!text) return text
+    const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi')
+    return text.replace(re,m=>`<mark>${m}</mark>`)
+  }
+  function show(id){ document.getElementById(id).style.display='' }
+  function hide(id){ document.getElementById(id).style.display='none' }
+  function errMsg(e){
+    if(!e) return 'Unknown error'
+    return typeof e.message==='string'?e.message:String(e)
   }
 
-  /**
-   * Build a metrics table.
-   * @param {Array}   items        - metrics array
-   * @param {boolean} readOnly     - true = actual value is display-only
-   * @param {string}  prefix       - unique ID prefix
-   * @param {boolean} showComments - true = show comment textarea per row
-   */
-  function buildTable(items, readOnly, prefix, showComments = true) {
-    if (!items.length)
-      return '<div class="loading">No metrics configured.</div>';
-
-    let html = `
-      <div class="tbl-head">
-        <div>Metric</div>
-        <div class="center">Actual</div>
-        <div class="center">Target</div>
-        <div class="center">Weight</div>
-        <div>Progress</div>
-      </div>`;
-
-    items.forEach(m => {
-      const a   = m.actual_value ?? 0;
-      const p   = pct(a, m.target);
-      const wc  = m.weightage >= 0 ? 'wt-pos' : 'wt-neg';
-      const wt  = m.weightage >= 0 ? `+${m.weightage}%` : `${m.weightage}%`;
-      const cmt = esc(m.comment);
-
-      const valCell = readOnly
-        ? `<div class="center">${m.actual_value ?? '—'}</div>`
-        : `<div class="center">
-             <input class="num-input"
-                    id="${prefix}_${m.name}"
-                    type="number" min="0"
-                    value="${m.actual_value ?? ''}"
-                    placeholder="0"/>
-           </div>`;
-
-      const commentHtml = showComments ? `
-        <div class="comment-row">
-          <span class="comment-icon">💬</span>
-          <textarea class="comment-input"
-                    id="${prefix}_cmt_${m.name}"
-                    placeholder="Add a comment for ${m.label}…">${cmt}</textarea>
-        </div>` : '';
-
-      html += `
-        <div class="metric-block">
-          <div class="tbl-row">
-            <div>${m.label}</div>
-            ${valCell}
-            <div class="center">${m.target}</div>
-            <div class="${wc}">${wt}</div>
-            <div class="prog">
-              <div class="prog-bar">
-                <div class="prog-fill ${fillCls(p)}"
-                     style="width:${p}%"></div>
-              </div>
-              <span class="prog-pct">${p}%</span>
-            </div>
-          </div>
-          ${commentHtml}
-        </div>`;
-    });
-
-    return html;
+  /* ── API ── */
+  function authHdrs(){
+    return {'Authorization':`Bearer ${TOKEN}`,
+            'Content-Type':'application/json'}
   }
-
-  function render() {
-    const jiraMetrics   = metrics.filter(m =>  m.jira_auto);
-    const manualMetrics = metrics.filter(m => !m.jira_auto);
-
-    // Tab 1 — Jira: read-only values, NO comments
-    document.getElementById('jiraBox').innerHTML =
-      buildTable(jiraMetrics, true, 't1j', false);
-
-    // Tab 1 — Manual: editable values + comments
-    document.getElementById('manualBox').innerHTML =
-      buildTable(manualMetrics, false, 't1m', true);
-
-    // Tab 2 — ALL 7 metrics editable + comments
-    document.getElementById('allMetricsBox').innerHTML =
-      buildTable(metrics, false, 't2', true);
-
-    updateScores();
-  }
-
-  function updateScores() {
-    const entered = metrics.filter(m => m.actual_value != null).length;
-    document.getElementById('sEntered').textContent = entered;
-    document.getElementById('sTotal').textContent   = metrics.length;
-
-    let earn = 0, tot = 0;
-    metrics.forEach(m => {
-      if (m.actual_value != null) {
-        const ratio = m.target > 0
-          ? Math.min(m.actual_value / m.target, 1) : 0;
-        earn += ratio * Math.abs(m.weightage) * (m.weightage >= 0 ? 1 : -1);
-        tot  += Math.abs(m.weightage);
-      }
-    });
-    document.getElementById('sScore').textContent =
-      tot > 0 ? Math.round((earn / tot) * 100) + '%' : '—';
-  }
-
-  /**
-   * Generic save helper.
-   * @param {Array}   items       - metrics to save
-   * @param {string}  prefix      - input ID prefix
-   * @param {string}  msgId       - status message element ID
-   * @param {boolean} valReadOnly - true = keep existing actual_value
-   */
-  async function persist(items, prefix, msgId, valReadOnly = false) {
-    const yr  = document.getElementById('yr').value;
-    const msg = document.getElementById(msgId);
-    try {
-      for (const m of items) {
-        const inp     = document.getElementById(`${prefix}_${m.name}`);
-        const cmtEl   = document.getElementById(`${prefix}_cmt_${m.name}`);
-        const comment = cmtEl ? cmtEl.value.trim() : '';
-
-        let actualVal;
-        if (valReadOnly) {
-          if (!comment && m.actual_value == null) continue;
-          actualVal = m.actual_value ?? 0;
-        } else {
-          if (!inp || inp.value === '') continue;
-          actualVal = parseFloat(inp.value);
-        }
-
-        await api('/api/metrics/save', {
-          method: 'POST',
-          body:   JSON.stringify({
-            metric_name:  m.name,
-            actual_value: actualVal,
-            year:         parseInt(yr),
-            comment:      comment,
-          }),
-        });
-      }
-      msg.className   = 'status-msg st-ok';
-      msg.textContent = '✅ Saved successfully!';
-      await loadMetrics();
-    } catch (err) {
-      msg.className   = 'status-msg st-err';
-      msg.textContent = `❌ Save failed: ${err.message}`;
+  async function apiGet(url){
+    const r=await fetch(url,{headers:authHdrs()})
+    if(r.status===401){
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login');return
     }
-    setTimeout(() => { msg.className = 'status-msg'; }, 4000);
+    const d=await r.json()
+    if(!r.ok) throw new Error(d.detail||'Request failed')
+    return d
   }
 
-  // Tab 1 — Manual section (volunteer + demo)
-  function saveTab1Manual() {
-    persist(metrics.filter(m => !m.jira_auto), 't1m', 'msgTab1', false);
-  }
-
-  // Tab 2 — All 7 metrics
-  function saveTab2() {
-    persist(metrics, 't2', 'msgTab2', false);
-  }
-
-  function logout() {
-    localStorage.removeItem('token');
-    location.href = '/';
-  }
-
-  init();
+  boot()
 </script>
 </body>
 </html>

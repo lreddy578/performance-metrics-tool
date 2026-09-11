@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jira Authentication</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
+         color:#172b4d;min-height:100vh;display:flex;
+         flex-direction:column;align-items:center;
+         justify-content:flex-start;padding:40px 16px}
+
+    .header{background:#0052cc;color:#fff;padding:14px 28px;
+            width:100%;position:fixed;top:0;left:0;
+            display:flex;align-items:center;gap:12px;
+            box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:10}
+    .header h1{font-size:18px;font-weight:600}
+
+    .card{background:#fff;border-radius:10px;padding:36px 40px;
+          box-shadow:0 4px 16px rgba(0,0,0,.1);
+          width:100%;max-width:520px;margin-top:90px}
+
+    .jira-logo{text-align:center;margin-bottom:24px}
+    .jira-logo .icon{font-size:48px}
+    .jira-logo h2{font-size:22px;font-weight:700;margin-top:10px}
+    .jira-logo p{color:#6b778c;font-size:14px;margin-top:6px;
+                 line-height:1.5}
+
+    /* User chip */
+    .user-chip{background:#f4f5f7;border-radius:8px;
+               padding:14px 18px;margin-bottom:24px;
+               display:flex;align-items:center;gap:14px}
+    .user-avatar{width:40px;height:40px;border-radius:50%;
+                 background:#0052cc;color:#fff;display:flex;
+                 align-items:center;justify-content:center;
+                 font-size:18px;font-weight:700;flex-shrink:0}
+    .user-info .name{font-weight:600;font-size:15px}
+    .user-info .role{font-size:12px;color:#6b778c;margin-top:2px}
+
+    /* Status */
+    .auth-status{display:flex;align-items:center;gap:8px;
+                 padding:10px 14px;border-radius:6px;
+                 margin-bottom:20px;font-size:13px;font-weight:500}
+    .auth-status.authenticated{background:#e3fcef;color:#006644}
+    .auth-status.not-auth{background:#fff0b3;color:#974f0c}
+
+    /* Form */
+    .field{margin-bottom:16px}
+    .field label{display:block;font-size:13px;font-weight:600;
+                 margin-bottom:6px;color:#172b4d}
+    .field input{width:100%;padding:10px 13px;border:1px solid #dfe1e6;
+                 border-radius:5px;font-size:14px;font-family:inherit;
+                 color:#172b4d;background:#fff;transition:border-color .15s}
+    .field input:focus{outline:none;border-color:#0052cc;
+                       box-shadow:0 0 0 2px rgba(0,82,204,.1)}
+    .field .hint{font-size:11px;color:#6b778c;margin-top:4px;
+                 line-height:1.5}
+    .field a{color:#0052cc;text-decoration:none}
+    .field a:hover{text-decoration:underline}
+
+    /* Buttons */
+    .btn{padding:11px 22px;border:none;border-radius:5px;cursor:pointer;
+         font-size:14px;font-weight:600;width:100%;margin-top:6px;
+         display:flex;align-items:center;justify-content:center;
+         gap:8px;transition:background .15s,opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-primary{background:#0052cc;color:#fff}
+    .btn-primary:hover:not(:disabled){background:#0065ff}
+    .btn-danger{background:#de350b;color:#fff}
+    .btn-danger:hover:not(:disabled){background:#c4280a}
+    .btn-ghost{background:#f4f5f7;color:#344563;
+               border:1px solid #dfe1e6}
+    .btn-ghost:hover:not(:disabled){background:#ebecf0}
+
+    /* Alert */
+    .alert{padding:11px 14px;border-radius:5px;font-size:13px;
+           margin-bottom:16px;line-height:1.5}
+    .alert-err{background:#ffebe6;color:#bf2600;
+               border-left:4px solid #de350b}
+    .alert-ok {background:#e3fcef;color:#006644;
+               border-left:4px solid #36b37e}
+
+    .divider{border:none;border-top:1px solid #f4f5f7;margin:20px 0}
+
+    /* Token tip */
+    .tip-box{background:#deebff;border-radius:6px;padding:14px 16px;
+             margin-bottom:20px;font-size:12px;color:#0052cc;
+             line-height:1.6}
+    .tip-box strong{display:block;margin-bottom:4px}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <span style="font-size:22px">🔐</span>
+  <h1>Jira Authentication</h1>
+</div>
+
+<div class="card">
+
+  <div class="jira-logo">
+    <div class="icon">🔗</div>
+    <h2>Connect to Jira</h2>
+    <p>Authenticate with your Jira account to access and manage
+       your performance metrics.</p>
+  </div>
+
+  <!-- User chip populated by JS -->
+  <div class="user-chip" id="userChip" style="display:none">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <div class="user-info">
+      <div class="name" id="userName">Loading…</div>
+      <div class="role" id="userRole"></div>
+    </div>
+  </div>
+
+  <!-- Auth status -->
+  <div id="authStatus" style="display:none"></div>
+
+  <!-- Alert -->
+  <div id="alertBox"></div>
+
+  <!-- Token tip -->
+  <div class="tip-box">
+    <strong>🔑 How to get your Jira API Token:</strong>
+    Go to
+    <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
+       target="_blank">id.atlassian.com → Security → API Tokens</a>
+    → Click <em>Create API token</em> → Copy and paste it below.
+  </div>
+
+  <!-- Form -->
+  <div id="authForm">
+    <div class="field">
+      <label>Jira URL <span style="color:#de350b">*</span></label>
+      <input type="text" id="jiraUrl"
+             placeholder="https://your-company.atlassian.net"/>
+      <div class="hint">Your Atlassian/Jira Cloud base URL</div>
+    </div>
+    <div class="field">
+      <label>Jira Email <span style="color:#de350b">*</span></label>
+      <input type="email" id="jiraEmail"
+             placeholder="you@company.com"/>
+      <div class="hint">The email you use to log in to Jira</div>
+    </div>
+    <div class="field">
+      <label>Jira API Token <span style="color:#de350b">*</span></label>
+      <input type="password" id="jiraToken"
+             placeholder="Paste your API token here"/>
+      <div class="hint">
+        Generate at
+        <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
+           target="_blank">Atlassian API Tokens page</a>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="saveBtn"
+            onclick="saveAuth()">
+      🔐 Authenticate &amp; Save
+    </button>
+    <button class="btn btn-ghost" style="margin-top:10px"
+            onclick="goBack()">
+      ← Back to Entry Page
+    </button>
+  </div>
+
+  <!-- Revoke section (shown when already authenticated) -->
+  <div id="revokeSection" style="display:none">
+    <hr class="divider"/>
+    <p style="font-size:13px;color:#6b778c;margin-bottom:14px">
+      Want to change your Jira credentials? Revoke and re-authenticate.
+    </p>
+    <button class="btn btn-danger" onclick="revokeAuth()">
+      🗑️ Revoke Jira Authentication
+    </button>
+    <button class="btn btn-ghost" style="margin-top:10px"
+            onclick="goBack()">
+      ← Back to Entry Page
+    </button>
+  </div>
+
+</div>
+
+<script>
+  let userId   = null;
+  let userData = null;
+
+  async function boot() {
+    const params = new URLSearchParams(window.location.search);
+    userId = params.get('user_id');
+    if (!userId) {
+      showAlert('err',
+        '⚠️ No user specified. '
+        + '<a href="/user">Go back to Entry Page</a>.');
+      return;
+    }
+
+    try {
+      userData = await apiGet(`/api/users/${userId}`);
+      renderUserChip(userData);
+      renderAuthStatus(userData);
+    } catch (e) {
+      showAlert('err', '❌ Could not load user: ' + errMsg(e));
+    }
+  }
+
+  function renderUserChip(u) {
+    document.getElementById('userAvatar').textContent =
+      u.name.charAt(0).toUpperCase();
+    document.getElementById('userName').textContent = u.name;
+    document.getElementById('userRole').textContent =
+      `${u.role} · ${u.email}`;
+    document.getElementById('userChip').style.display = 'flex';
+  }
+
+  function renderAuthStatus(u) {
+    const statusEl = document.getElementById('authStatus');
+    const formEl   = document.getElementById('authForm');
+    const revokeEl = document.getElementById('revokeSection');
+
+    if (u.jira_authenticated) {
+      statusEl.innerHTML = `
+        <div class="auth-status authenticated">
+          ✅ Authenticated as <strong>${u.jira_email || '—'}</strong>
+          on <strong>${u.jira_url || '—'}</strong>
+        </div>`;
+      statusEl.style.display = '';
+      formEl.style.display   = 'none';
+      revokeEl.style.display = '';
+    } else {
+      statusEl.innerHTML = `
+        <div class="auth-status not-auth">
+          ⚠️ Not yet authenticated with Jira.
+          Complete the form below to continue.
+        </div>`;
+      statusEl.style.display = '';
+      formEl.style.display   = '';
+      revokeEl.style.display = 'none';
+    }
+  }
+
+  async function saveAuth() {
+    const jiraUrl   = document.getElementById('jiraUrl').value.trim();
+    const jiraEmail = document.getElementById('jiraEmail').value.trim();
+    const jiraToken = document.getElementById('jiraToken').value.trim();
+
+    if (!jiraUrl || !jiraEmail || !jiraToken) {
+      showAlert('err', '⚠️ All three fields are required.');
+      return;
+    }
+
+    const btn = startLoading('saveBtn', 'Verifying credentials…');
+    clearAlert();
+    try {
+      await apiPost(`/api/users/${userId}/jira-auth`, {
+        jira_url:       jiraUrl,
+        jira_email:     jiraEmail,
+        jira_api_token: jiraToken,
+      });
+      showAlert('ok',
+        '✅ Jira authentication successful! Redirecting…');
+      setTimeout(goBack, 1500);
+    } catch (e) {
+      showAlert('err', '❌ ' + errMsg(e));
+    } finally {
+      stopLoading(btn, '🔐 Authenticate & Save');
+    }
+  }
+
+  async function revokeAuth() {
+    if (!confirm(
+      'Revoke Jira authentication? '
+      + 'You will need to re-authenticate to add metrics.')) return;
+    try {
+      await apiDel(`/api/users/${userId}/jira-auth`);
+      userData.jira_authenticated = false;
+      renderAuthStatus(userData);
+      showAlert('ok', '✅ Jira authentication revoked.');
+    } catch (e) {
+      showAlert('err', '❌ ' + errMsg(e));
+    }
+  }
+
+  function goBack() {
+    window.location.href = '/user';
+  }
+
+  /* ── Helpers ── */
+  function showAlert(type, msg) {
+    document.getElementById('alertBox').innerHTML =
+      `<div class="alert alert-${type}">${msg}</div>`;
+  }
+  function clearAlert() {
+    document.getElementById('alertBox').innerHTML = '';
+  }
+  function errMsg(e) {
+    if (!e) return 'Unknown error';
+    if (typeof e.message === 'string') return e.message;
+    return String(e);
+  }
+  function startLoading(btnId, txt) {
+    const b = document.getElementById(btnId);
+    b._orig = b.textContent; b.disabled = true; b.textContent = txt;
+    return b;
+  }
+  function stopLoading(b, orig) {
+    b.disabled = false; b.textContent = orig || b._orig;
+  }
+
+  /* ── API ── */
+  async function apiGet(url) {
+    const r = await fetch(url);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Request failed');
+    return d;
+  }
+  async function apiPost(url, body) {
+    const r = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Request failed');
+    return d;
+  }
+  async function apiDel(url) {
+    const r = await fetch(url, { method: 'DELETE' });
+    if (!r.ok) {
+      const d = await r.json();
+      throw new Error(d.detail || 'Request failed');
+    }
+  }
+
+  boot();
+</script>
+</body>
+</html>

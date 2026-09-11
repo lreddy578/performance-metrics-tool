@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Performance Metrics — My Data</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
+         color:#172b4d;min-height:100vh}
+
+    .header{background:#0052cc;color:#fff;padding:14px 28px;
+            display:flex;align-items:center;justify-content:space-between;
+            flex-wrap:wrap;gap:10px}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .header h1{font-size:20px;font-weight:600}
+    .welcome{font-size:13px;opacity:.85}
+    .nav-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .nav-link{color:#fff;text-decoration:none;
+              background:rgba(255,255,255,.18);padding:8px 16px;
+              border-radius:4px;font-size:13px;font-weight:500;
+              transition:background .15s}
+    .nav-link:hover{background:rgba(255,255,255,.28)}
+    .nav-link.disabled{opacity:.35;pointer-events:none}
+    .btn-logout{background:rgba(222,53,11,.7);color:#fff;border:none;
+                padding:8px 16px;border-radius:4px;cursor:pointer;
+                font-size:13px;font-weight:500;transition:background .15s}
+    .btn-logout:hover{background:rgba(222,53,11,1)}
+
+    .container{max-width:1300px;margin:24px auto;padding:0 20px}
+
+    .card{background:#fff;border-radius:8px;padding:20px 24px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
+
+    .btn{padding:9px 18px;border:none;border-radius:4px;cursor:pointer;
+         font-size:13px;font-weight:600;display:inline-flex;
+         align-items:center;gap:6px;transition:background .15s,opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-primary{background:#0052cc;color:#fff}
+    .btn-primary:hover:not(:disabled){background:#0065ff}
+    .btn-success{background:#36b37e;color:#fff}
+    .btn-success:hover:not(:disabled){background:#2d9c6b}
+    .btn-warning{background:#ff991f;color:#fff}
+    .btn-warning:hover:not(:disabled){background:#e58a00}
+    .btn-danger {background:#de350b;color:#fff}
+    .btn-danger:hover:not(:disabled){background:#c4280a}
+    .btn-ghost  {background:#f4f5f7;color:#344563;
+                 border:1px solid #dfe1e6}
+    .btn-ghost:hover:not(:disabled){background:#ebecf0}
+    .btn-sm{padding:5px 11px;font-size:12px}
+
+    input[type=number],textarea{
+      padding:9px 12px;border:1px solid #dfe1e6;border-radius:4px;
+      font-size:14px;font-family:inherit;color:#172b4d;background:#fff;
+      transition:border-color .15s}
+    input:focus,textarea:focus{outline:none;border-color:#0052cc;
+      box-shadow:0 0 0 2px rgba(0,82,204,.1)}
+
+    .profile-bar{display:flex;align-items:center;
+                 justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .chips{display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+    .chip .lbl{font-size:10px;font-weight:700;color:#6b778c;
+               text-transform:uppercase;letter-spacing:.6px}
+    .chip .val{font-size:14px;font-weight:500;margin-top:2px}
+    .role-pill{background:#deebff;color:#0052cc;padding:3px 12px;
+               border-radius:20px;font-size:12px;font-weight:600}
+
+    .auth-banner{display:flex;align-items:center;
+                 justify-content:space-between;flex-wrap:wrap;gap:12px;
+                 background:#fff0b3;border:1px solid #f6c142;
+                 border-radius:6px;padding:14px 18px;margin-top:14px}
+    .auth-banner p{font-size:13px;color:#974f0c;font-weight:500}
+    .auth-ok{background:#e3fcef;border:1px solid #57d9a3;
+             border-radius:6px;padding:10px 16px;
+             font-size:13px;color:#006644;margin-top:14px;
+             display:flex;align-items:center;justify-content:space-between;
+             flex-wrap:wrap;gap:8px}
+
+    .tbl-wrap{overflow-x:auto}
+    .tbl-meta{display:flex;align-items:center;justify-content:space-between;
+              margin-bottom:14px;flex-wrap:wrap;gap:8px}
+    .tbl-meta h3{font-size:15px;font-weight:600}
+    .badge{background:#ebecf0;color:#6b778c;padding:2px 10px;
+           border-radius:10px;font-size:12px}
+
+    table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+    thead th{background:#f8f9fa;padding:11px 14px;text-align:left;
+             font-size:11px;font-weight:700;color:#6b778c;
+             text-transform:uppercase;letter-spacing:.5px;
+             border-bottom:2px solid #dfe1e6;white-space:nowrap}
+    tbody td{padding:10px 14px;border-bottom:1px solid #f4f5f7;
+             vertical-align:middle}
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr:hover td{background:#f8f9fa}
+    .num{text-align:right}
+    .note-cell{max-width:160px;overflow:hidden;text-overflow:ellipsis;
+               white-space:nowrap;color:#6b778c;font-style:italic}
+    .actions{display:flex;gap:6px;white-space:nowrap}
+
+    .empty{text-align:center;padding:48px 20px;color:#6b778c}
+    .empty .icon{font-size:40px;margin-bottom:10px}
+
+    .overlay{position:fixed;inset:0;background:rgba(9,30,66,.55);
+             display:flex;align-items:center;justify-content:center;
+             z-index:900;padding:16px}
+    .overlay.hidden{display:none !important}
+    .modal{background:#fff;border-radius:8px;width:100%;max-width:560px;
+           max-height:92vh;overflow-y:auto;
+           box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .m-head{padding:20px 24px 16px;border-bottom:1px solid #f4f5f7;
+            display:flex;align-items:center;justify-content:space-between}
+    .m-head h2{font-size:18px;font-weight:600}
+    .m-close{background:none;border:none;font-size:22px;cursor:pointer;
+             color:#6b778c;padding:4px 8px;border-radius:4px;line-height:1}
+    .m-close:hover{background:#f4f5f7}
+    .m-body{padding:22px 24px}
+    .m-foot{padding:14px 24px;border-top:1px solid #f4f5f7;
+            display:flex;justify-content:flex-end;gap:10px}
+
+    .field{margin-bottom:14px}
+    .field label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+    .field input,.field textarea{width:100%}
+    .field textarea{min-height:68px;resize:vertical;line-height:1.5}
+    .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+    @media(max-width:500px){.field-grid{grid-template-columns:1fr}}
+
+    .alert{padding:10px 14px;border-radius:4px;font-size:13px;margin-bottom:14px}
+    .alert-err{background:#ffebe6;color:#bf2600;border-left:4px solid #de350b}
+    .alert-ok {background:#e3fcef;color:#006644;border-left:4px solid #36b37e}
+
+    .loading{text-align:center;padding:60px;color:#6b778c;font-size:15px}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>📊 Performance Metrics</h1>
+    <span class="welcome" id="welcomeMsg"></span>
+  </div>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-link" id="dashNav">
+      📋 Dashboard
+    </a>
+    <a href="/jira-assignments" class="nav-link">🎫 My Jira Assignments</a>
+    <!-- ✅ CHANGE 1: added id="adminLink" -->
+    <a href="/admin" class="nav-link" id="adminLink">⚙️ Admin</a>
+    <button class="btn-logout" onclick="logout()">
+      🚪 Sign Out
+    </button>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="loadingMsg" class="loading">Loading your profile…</div>
+
+  <!-- PROFILE CARD -->
+  <div id="profileCard" class="card" style="display:none">
+    <div class="profile-bar">
+      <div class="chips">
+        <div class="chip">
+          <div class="lbl">Name</div>
+          <div class="val" id="uName">—</div>
+        </div>
+        <div class="chip">
+          <div class="lbl">Email</div>
+          <div class="val" id="uEmail">—</div>
+        </div>
+        <div class="chip">
+          <div class="lbl">Role</div>
+          <div class="val">
+            <span class="role-pill" id="uRole">—</span>
+          </div>
+        </div>
+        <div class="chip">
+          <div class="lbl">Member Since</div>
+          <div class="val" id="uSince">—</div>
+        </div>
+      </div>
+      <button class="btn btn-success" id="addMetricsBtn"
+              onclick="openAddMetrics()" style="display:none">
+        ➕ Add Metrics
+      </button>
+    </div>
+
+  <!-- TABLE -->
+  <div id="tableCard" class="card" style="display:none">
+    <div class="tbl-meta">
+      <h3>📋 My Metric Entries</h3>
+      <span class="badge" id="entryBadge">0 entries</span>
+    </div>
+    <div class="tbl-wrap" id="tableWrap"></div>
+  </div>
+
+</div>
+
+<!-- ═══ ADD / EDIT METRICS MODAL ═══ -->
+<div class="overlay hidden" id="metricsOverlay">
+  <div class="modal">
+    <div class="m-head">
+      <h2 id="mTitle">➕ Add Metrics</h2>
+      <button class="m-close"
+              onclick="hideModal('metricsOverlay')">✕</button>
+    </div>
+    <div class="m-body">
+      <div id="mAlert"></div>
+      <input type="hidden" id="mEditId"/>
+      <div class="field-grid">
+        <div class="field">
+          <label>User Stories Completed</label>
+          <input type="number" id="m_user_stories_completed"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>Valid Defects Identified</label>
+          <input type="number" id="m_valid_defects"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>Invalid Defects Identified</label>
+          <input type="number" id="m_invalid_defects"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>P0 Defects Leaked</label>
+          <input type="number" id="m_p0_defects_leaked"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>Complex Stories (8+ pts)</label>
+          <input type="number" id="m_complex_stories"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>Volunteer Opportunities</label>
+          <input type="number" id="m_volunteer_opportunities"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>Demo Opportunities</label>
+          <input type="number" id="m_demo_opportunities"
+                 min="0" step="1" placeholder="0"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes
+          <span style="color:#6b778c;font-weight:400">(optional)</span>
+        </label>
+        <textarea id="m_notes" placeholder="Any notes…"></textarea>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost"
+              onclick="hideModal('metricsOverlay')">Cancel</button>
+      <button class="btn btn-success" id="mSubmitBtn"
+              onclick="submitMetrics()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const FIELDS = [
+    'user_stories_completed','valid_defects','invalid_defects',
+    'p0_defects_leaked','complex_stories',
+    'volunteer_opportunities','demo_opportunities',
+  ]
+
+  let currentUserId = null
+  let allEntries    = []
+
+  /* ── Auth guard ── */
+  const TOKEN = localStorage.getItem('pm_token')
+  if (!TOKEN) window.location.replace('/login')
+
+  function showModal(id) {
+    document.getElementById(id).classList.remove('hidden')
+  }
+  function hideModal(id) {
+    document.getElementById(id).classList.add('hidden')
+  }
+  document.querySelectorAll('.overlay').forEach(o => {
+    o.addEventListener('click', e => {
+      if (e.target === o) o.classList.add('hidden')
+    })
+  })
+
+  /* ── Boot ── */
+  async function boot() {
+    try {
+      const me = await apiGet('/api/auth/me')
+      currentUserId = me.id
+
+      document.getElementById('welcomeMsg').textContent =
+        `Welcome, ${me.name}`
+      document.getElementById('loadingMsg').style.display = 'none'
+
+      // Dashboard nav — enabled for all users
+      // (dashboard.html handles role-based content)
+      const nav = document.getElementById('dashNav')
+      nav.classList.remove('disabled')
+      nav.title = 'Open Dashboard'
+
+      // ✅ CHANGE 2: Admin button — only visible to admin email
+      const ADMIN_EMAIL = 'lreddy@teampurpose.com'
+      document.getElementById('adminLink').style.display =
+        me.email === ADMIN_EMAIL ? '' : 'none'
+      // ────────────────────────────────────────────────────────
+
+      renderProfile(me)
+      await loadEntries()
+    } catch (e) {
+      document.getElementById('loadingMsg').textContent =
+        '❌ Failed to load profile. ' + errMsg(e)
+    }
+  }
+
+  function renderProfile(u) {
+    document.getElementById('uName').textContent  = u.name
+    document.getElementById('uEmail').textContent = u.email
+    document.getElementById('uRole').textContent  = u.role
+    document.getElementById('uSince').textContent =
+      (u.created_at || '').substring(0, 10) || '—'
+
+    document.getElementById('addMetricsBtn').style.display = ''
+    document.getElementById('profileCard').style.display   = ''
+  }
+
+  async function loadEntries() {
+    const resp = await apiGet(`/api/metrics/${currentUserId}`)
+    allEntries = resp.entries
+    document.getElementById('tableCard').style.display = ''
+    renderTable(allEntries)
+  }
+
+  function goToJiraAuth() {
+    window.location.href = `/jira-auth?user_id=${currentUserId}`
+  }
+
+  /* ── Table ── */
+  function renderTable(rows) {
+    const n = rows.length
+    document.getElementById('entryBadge').textContent =
+      `${n} entr${n === 1 ? 'y' : 'ies'}`
+    const wrap = document.getElementById('tableWrap')
+    if (!n) {
+      wrap.innerHTML = `
+        <div class="empty">
+          <div class="icon">📭</div>
+          <strong>No entries yet</strong>
+          <p style="margin-top:8px">
+            Click <strong>➕ Add Metrics</strong> to get started.
+          </p>
+        </div>`
+      return
+    }
+    let t = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Date</th><th>Time (UTC)</th>
+            <th>User Stories</th><th>Valid Defects</th>
+            <th>Invalid Defects</th><th>P0 Leaked</th>
+            <th>Complex Stories</th><th>Volunteer Opps</th>
+            <th>Demo Opps</th><th>Notes</th><th>Actions</th>
+          </tr>
+        </thead><tbody>`
+    rows.forEach((e, i) => {
+      const time = (e.timestamp || '').substring(11,19) || '—'
+      t += `
+        <tr>
+          <td style="color:#6b778c">${i + 1}</td>
+          <td><strong>${e.date || '—'}</strong></td>
+          <td style="color:#6b778c;font-size:12px">${time}</td>
+          <td class="num">${fv(e.user_stories_completed)}</td>
+          <td class="num">${fv(e.valid_defects)}</td>
+          <td class="num">${fv(e.invalid_defects)}</td>
+          <td class="num">${fv(e.p0_defects_leaked)}</td>
+          <td class="num">${fv(e.complex_stories)}</td>
+          <td class="num">${fv(e.volunteer_opportunities)}</td>
+          <td class="num">${fv(e.demo_opportunities)}</td>
+          <td class="note-cell"
+              title="${esc(e.notes)}">${esc(e.notes)||'—'}</td>
+          <td class="actions">
+            <button class="btn btn-warning btn-sm"
+                    onclick="openEdit(${e.id})">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm"
+                    onclick="delEntry(${e.id})">🗑️</button>
+          </td>
+        </tr>`
+    })
+    const totalsRow = buildTotalsRow(rows)
+    t += totalsRow + '</tbody></table>'
+    wrap.innerHTML = t
+  }
+
+  /* ── Totals row ── */
+  const NUMERIC_FIELDS = [
+    'user_stories_completed', 'valid_defects', 'invalid_defects',
+    'p0_defects_leaked', 'complex_stories', 'volunteer_opportunities',
+    'demo_opportunities'
+  ]
+  function buildTotalsRow(rows) {
+    if (!rows.length) return ''
+    const sums = NUMERIC_FIELDS.map(f =>
+      rows.reduce((s, e) => s + (e[f] != null ? e[f] : 0), 0))
+    return `
+      <tr style="font-weight:700;background:#f4f5f7">
+        <td colspan="3">Total</td>
+        ${sums.map(s => `<td class="num">${s}</td>`).join('')}
+        <td class="note-cell"></td>
+        <td>—</td>
+      </tr>`
+  }
+
+  /* ── Metrics modal ── */
+  function openAddMetrics() {
+    document.getElementById('mTitle').textContent     = '➕ Add Metrics'
+    document.getElementById('mSubmitBtn').textContent = '💾 Save'
+    document.getElementById('mEditId').value          = ''
+    document.getElementById('mAlert').innerHTML       = ''
+    FIELDS.forEach(f => {
+      document.getElementById('m_' + f).value = ''
+    })
+    document.getElementById('m_notes').value = ''
+    showModal('metricsOverlay')
+  }
+
+  function openEdit(id) {
+    const e = allEntries.find(x => x.id === id)
+    if (!e) return
+    document.getElementById('mTitle').textContent     = '✏️ Update Metrics'
+    document.getElementById('mSubmitBtn').textContent = '✔ Update'
+    document.getElementById('mEditId').value          = id
+    document.getElementById('mAlert').innerHTML       = ''
+    FIELDS.forEach(f => {
+      document.getElementById('m_' + f).value =
+        e[f] != null ? e[f] : ''
+    })
+    document.getElementById('m_notes').value = e.notes || ''
+    showModal('metricsOverlay')
+  }
+
+  async function submitMetrics() {
+    const editId  = document.getElementById('mEditId').value
+    const payload = {
+      notes: document.getElementById('m_notes').value.trim()
+    }
+    FIELDS.forEach(f => {
+      const v = document.getElementById('m_' + f).value
+      if (v !== '') payload[f] = parseFloat(v)
+    })
+    if (!FIELDS.some(f => payload[f] != null)) {
+      showAlert('mAlert','err','⚠️ Enter at least one metric value.')
+      return
+    }
+    const btn = startLoading('mSubmitBtn', 'Saving…')
+    try {
+      if (editId) {
+        await apiPut(`/api/metrics/${currentUserId}/${editId}`, payload)
+      } else {
+        await apiPost(`/api/metrics/${currentUserId}`, payload)
+      }
+      hideModal('metricsOverlay')
+      await loadEntries()
+    } catch (e) {
+      showAlert('mAlert','err','❌ ' + errMsg(e))
+    } finally {
+      stopLoading(btn)
+    }
+  }
+
+  async function delEntry(id) {
+    if (!confirm('Delete this entry? Cannot be undone.')) return
+    try {
+      await apiDel(`/api/metrics/${currentUserId}/${id}`)
+      await loadEntries()
+    } catch (e) {
+      window.alert('Delete failed: ' + errMsg(e))
+    }
+  }
+
+  /* ── Logout ── */
+  async function logout() {
+    try {
+      await fetch('/api/auth/logout', {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}` },
+      })
+    } finally {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login')
+    }
+  }
+
+  /* ── Helpers ── */
+  function fv(v)  { return v != null ? v : '—' }
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+  function errMsg(e) {
+    if (!e) return 'Unknown error'
+    return typeof e.message === 'string' ? e.message : String(e)
+  }
+  function showAlert(cid, type, msg) {
+    document.getElementById(cid).innerHTML =
+      `<div class="alert alert-${type}">${msg}</div>`
+  }
+  function startLoading(btnId, txt) {
+    const b = document.getElementById(btnId)
+    b._orig = b.textContent; b.disabled = true; b.textContent = txt
+    return b
+  }
+  function stopLoading(b) {
+    b.disabled = false; b.textContent = b._orig
+  }
+
+  /* ── API ── */
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${TOKEN}`,
+             'Content-Type':  'application/json' }
+  }
+  async function apiGet(url) {
+    const r = await fetch(url, { headers: authHeaders() })
+    if (r.status === 401) {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login')
+      return
+    }
+    const d = await r.json()
+    if (!r.ok) throw new Error(d.detail || 'Request failed')
+    return d
+  }
+  async function apiPost(url, body) {
+    const r = await fetch(url, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify(body),
+    })
+    if (r.status === 401) {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login'); return
+    }
+    const d = await r.json()
+    if (!r.ok) throw new Error(d.detail || 'Request failed')
+    return d
+  }
+  async function apiPut(url, body) {
+    const r = await fetch(url, {
+      method: 'PUT', headers: authHeaders(),
+      body: JSON.stringify(body),
+    })
+    if (r.status === 401) {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login'); return
+    }
+    const d = await r.json()
+    if (!r.ok) throw new Error(d.detail || 'Request failed')
+    return d
+  }
+  async function apiDel(url) {
+    const r = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${TOKEN}` },
+    })
+    if (r.status === 401) {
+      localStorage.removeItem('pm_token')
+      window.location.replace('/login'); return
+    }
+    if (!r.ok) {
+      const d = await r.json()
+      throw new Error(d.detail || 'Request failed')
+    }
+  }
+
+  boot()
+</script>
+</body>
+</html>
