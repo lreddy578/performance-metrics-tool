@@ -49,9 +49,8 @@
               border:1px solid rgba(255,255,255,.4)}
 
     /* Tiles */
-    .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+    .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;
            margin-bottom:20px}
-    @media(max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}}
     .tile{background:#fff;border-radius:8px;padding:18px 20px;
           box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
     .tile .val{font-size:28px;font-weight:700;color:#0052cc}
@@ -72,11 +71,17 @@
                 justify-content:space-between;
                 margin-bottom:14px;flex-wrap:wrap;gap:8px}
     .tbl-header h3{font-size:15px;font-weight:600}
+    .tbl-header-left{display:flex;align-items:center;gap:10px}
     .badge{background:#ebecf0;color:#6b778c;padding:2px 10px;
            border-radius:10px;font-size:12px}
+    .collapse-toggle{background:#f4f5f7;border:1px solid #dfe1e6;border-radius:5px;
+                     color:#172b4d;cursor:pointer;font-size:12px;
+                     padding:4px 8px;line-height:1}
+    .collapse-toggle:hover{background:#ebecf0}
+    .collapsible.collapsed{display:none}
 
     .tbl-wrap{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:13px;min-width:1000px}
+    .tbl-wrap table{width:100%;border-collapse:collapse;font-size:13px;min-width:1000px}
     thead th{background:#f8f9fa;padding:11px 14px;text-align:left;
              font-size:11px;font-weight:700;color:#6b778c;
              text-transform:uppercase;letter-spacing:.5px;
@@ -117,9 +122,9 @@
     .jira-filter-field{display:flex;flex-direction:column;gap:4px}
     .jira-filter-field label{font-size:12px;color:#6b778c;font-weight:600}
     .jira-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-              gap:16px}
+              gap:16px;align-items:start}
     .jira-card{background:#fff;border:1px solid #ebecf0;border-radius:10px;
-              padding:18px;text-align:center}
+              padding:18px;text-align:center;min-width:0;overflow:hidden}
     .jira-card .jira-label{font-size:.85rem;color:#666}
     .jira-card .jira-count{font-size:2rem;font-weight:bold;margin:8px 0}
     .jira-link{color:#0052cc;display:inline-block;font-size:12px;
@@ -131,12 +136,75 @@
     .jira-toggle:hover{background:#ebecf0}
     .jira-details{border-top:1px solid #ebecf0;margin-top:12px;
                   padding-top:10px;text-align:left}
-    .jira-space-table{border-collapse:collapse;width:100%}
-    .jira-space-table td{border-bottom:1px solid #ebecf0;font-size:12px;
-                         padding:6px 2px}
-    .jira-space-table td:last-child{font-weight:600;text-align:right}
+    .jira-space-row{display:flex;justify-content:space-between;align-items:baseline;
+                    gap:8px;border-bottom:1px solid #ebecf0;font-size:12px;
+                    padding:6px 2px}
+    .jira-space-row:last-child{border-bottom:none}
+    .jira-space-row .jira-space-name{overflow-wrap:break-word;min-width:0}
+    .jira-space-row .jira-space-count{font-weight:600;flex-shrink:0}
     .jira-loading,.jira-error{text-align:center;padding:24px;color:#6b778c}
     .jira-error{color:#bf2600}
+
+    /* Weightage calculator panel (chat-widget style, non-blocking) */
+    .modal-overlay{position:fixed;right:24px;bottom:96px;left:auto;top:auto;
+                   background:transparent;display:none;
+                   z-index:950;pointer-events:none}
+    .modal-overlay.open{display:flex}
+    .modal-box{pointer-events:auto;background:#fff;border-radius:12px;
+               position:relative;
+               width:420px;height:520px;min-width:320px;min-height:280px;
+               max-width:calc(100vw - 48px);max-height:calc(100vh - 120px);
+               overflow:hidden;
+               box-shadow:0 10px 30px rgba(9,30,66,.3);
+               border:1px solid #ebecf0;display:flex;flex-direction:column}
+    .resize-handle{position:absolute;background:#fff;border:2px solid #0052cc;
+                   z-index:10}
+    .resize-handle:hover{background:#deebff}
+    .resize-handle-corner{top:-6px;left:-6px;width:12px;height:12px;
+                          border-radius:50%;cursor:nwse-resize}
+    .resize-handle-top{top:-5px;left:50%;transform:translateX(-50%);
+                       width:28px;height:8px;border-radius:4px;cursor:ns-resize}
+    .resize-handle-left{left:-5px;top:50%;transform:translateY(-50%);
+                        width:8px;height:28px;border-radius:4px;cursor:ew-resize}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;
+                  padding:16px 20px;border-bottom:1px solid #ebecf0;flex-shrink:0}
+    .modal-header h3{font-size:16px;font-weight:600}
+    .modal-close{background:none;border:none;font-size:16px;cursor:pointer;
+                 color:#6b778c;padding:4px 8px}
+    .modal-close:hover{color:#172b4d}
+    .modal-body{padding:20px;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
+    .modal-footer{display:flex;justify-content:flex-end;gap:8px;
+                  padding:14px 20px;border-top:1px solid #ebecf0;flex-shrink:0}
+    .calc-table-wrap{overflow-x:auto;overflow-y:hidden;min-width:0;width:100%;
+                     margin-bottom:4px}
+    .calc-table-wrap::-webkit-scrollbar{height:12px}
+    .calc-table-wrap::-webkit-scrollbar-track{background:#f4f5f7;border-radius:6px}
+    .calc-table-wrap::-webkit-scrollbar-thumb{background:#8993a4;border-radius:6px}
+    .calc-table-wrap::-webkit-scrollbar-thumb:hover{background:#6b778c}
+    .calc-table{border-collapse:collapse;width:100%;min-width:560px;font-size:12px}
+    .calc-table th{background:#f8f9fa;padding:8px 10px;text-align:left;
+                   font-size:11px;font-weight:700;color:#6b778c;
+                   text-transform:uppercase;border-bottom:2px solid #dfe1e6}
+    .calc-table td{padding:8px 10px;border-bottom:1px solid #f4f5f7;vertical-align:middle}
+    .calc-table td.num{text-align:right;white-space:nowrap}
+    .calc-input{width:70px;padding:6px 8px;border:1px solid #dfe1e6;
+                border-radius:4px;font-size:13px;text-align:right}
+    .calc-table tfoot td{border-bottom:none;border-top:2px solid #dfe1e6}
+
+    /* Floating chat-bubble style trigger */
+    .calc-fab{position:fixed;right:24px;bottom:24px;width:58px;height:58px;
+              border-radius:50%;background:#0052cc;color:#fff;border:none;
+              font-size:26px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);
+              display:flex;align-items:center;justify-content:center;
+              z-index:900;transition:transform .15s,box-shadow .15s}
+    .calc-fab:hover{transform:scale(1.08);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    .calc-fab-label{position:absolute;bottom:70px;right:0;background:#172b4d;
+                    color:#fff;font-size:12px;font-weight:600;padding:6px 10px;
+                    border-radius:6px;white-space:nowrap;opacity:0;
+                    pointer-events:none;transition:opacity .15s}
+    .calc-fab-wrap{position:fixed;right:24px;bottom:24px;z-index:900}
+    .calc-fab-wrap:hover .calc-fab-label{opacity:1}
+    .calc-fab-wrap .calc-fab{position:static}
   </style>
 </head>
 <body>
@@ -190,36 +258,57 @@
     </div>
     <div class="tile">
       <div class="val" id="tStories">—</div>
-      <div class="lbl">Avg User Stories</div>
+      <div class="lbl">Total User Stories</div>
     </div>
     <div class="tile">
       <div class="val" id="tDefects">—</div>
-      <div class="lbl">Avg Valid Defects</div>
+      <div class="lbl">Total Valid Defects</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tInvalidDefects">—</div>
+      <div class="lbl">Total Invalid Defects</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tP0Leaked">—</div>
+      <div class="lbl">Total P0 Leaked</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tComplexStories">—</div>
+      <div class="lbl">Total Complex Stories</div>
     </div>
     <div class="tile">
       <div class="val" id="tVolunteer">—</div>
-      <div class="lbl">Avg Volunteer Opps</div>
+      <div class="lbl">Total Volunteer Opps</div>
+    </div>
+    <div class="tile">
+      <div class="val" id="tDemoOpps">—</div>
+      <div class="lbl">Total Demo Opps</div>
     </div>
   </div>
 
   <!-- Data table -->
   <div id="tableCard" class="card" style="display:none">
-    <div class="filter-bar">
-      <input type="text" id="searchBox" style="min-width:200px"
-             placeholder="🔍 Search notes or date…"
-             oninput="applyFilters()"/>
-      <span class="filter-label">From:</span>
-      <input type="date" id="dateFrom" onchange="applyFilters()"/>
-      <span class="filter-label">To:</span>
-      <input type="date" id="dateTo"   onchange="applyFilters()"/>
-      <button class="btn btn-ghost btn-sm"
-              onclick="clearFilters()">✕ Clear</button>
-    </div>
     <div class="tbl-header">
-      <h3>📊 Entries</h3>
+      <div class="tbl-header-left">
+        <button class="collapse-toggle" type="button" aria-expanded="true"
+                onclick="toggleCollapse(this,'entriesCollapsible')">▾</button>
+        <h3>📊 Manual Entries</h3>
+      </div>
       <span class="badge" id="rowBadge">0 rows</span>
     </div>
-    <div class="tbl-wrap">
+    <div class="collapsible" id="entriesCollapsible">
+      <div class="filter-bar">
+        <input type="text" id="searchBox" style="min-width:200px"
+               placeholder="🔍 Search notes or date…"
+               oninput="applyFilters()"/>
+        <span class="filter-label">From:</span>
+        <input type="date" id="dateFrom" onchange="applyFilters()"/>
+        <span class="filter-label">To:</span>
+        <input type="date" id="dateTo"   onchange="applyFilters()"/>
+        <button class="btn btn-ghost btn-sm"
+                onclick="clearFilters()">✕ Clear</button>
+      </div>
+      <div class="tbl-wrap" id="entriesWrap">
       <table>
         <thead>
           <tr>
@@ -245,32 +334,39 @@
         </thead>
         <tbody id="tbody"></tbody>
       </table>
+      </div>
     </div>
   </div>
 
   <!-- Inline Jira metrics -->
   <div id="jiraCard" class="card" style="display:none">
-    <div class="jira-filter-bar">
-      <div class="jira-filter-field">
-        <label for="jiraVersion">Release / Fix Version</label>
-        <input type="text" id="jiraVersion" placeholder="e.g. AA.R.4.0.0">
-      </div>
-      <div class="jira-filter-field">
-        <label for="jiraStart">Created From</label>
-        <input type="date" id="jiraStart">
-      </div>
-      <div class="jira-filter-field">
-        <label for="jiraEnd">Created To</label>
-        <input type="date" id="jiraEnd">
-      </div>
-      <button class="btn btn-primary btn-sm" onclick="loadReporteeJira()">Apply</button>
-      <button class="btn btn-ghost btn-sm" onclick="clearJiraFilters()">✕ Clear</button>
-    </div>
     <div class="tbl-header">
-      <h3>🎫 Jira Metrics</h3>
+      <div class="tbl-header-left">
+        <button class="collapse-toggle" type="button" aria-expanded="true"
+                onclick="toggleCollapse(this,'jiraCollapsible')">▾</button>
+        <h3>🎫 Jira Metrics</h3>
+      </div>
       <span class="badge" id="jiraBadge"></span>
     </div>
-    <div id="jiraContent"></div>
+    <div class="collapsible" id="jiraCollapsible">
+      <div class="jira-filter-bar">
+        <div class="jira-filter-field">
+          <label for="jiraVersion">Release / Fix Version</label>
+          <input type="text" id="jiraVersion" placeholder="e.g. AA.R.4.0.0">
+        </div>
+        <div class="jira-filter-field">
+          <label for="jiraStart">Created From</label>
+          <input type="date" id="jiraStart">
+        </div>
+        <div class="jira-filter-field">
+          <label for="jiraEnd">Created To</label>
+          <input type="date" id="jiraEnd">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadReporteeJira()">Apply</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearJiraFilters()">✕ Clear</button>
+      </div>
+      <div id="jiraContent"></div>
+    </div>
   </div>
 
   <!-- Placeholder -->
@@ -285,6 +381,60 @@
     </div>
   </div>
 
+</div>
+
+<!-- Floating chatbot-style trigger for the weightage calculator -->
+<div class="calc-fab-wrap">
+  <span class="calc-fab-label">Weightage Calculator</span>
+  <button class="calc-fab" type="button" aria-label="Open weightage calculator"
+          onclick="openCalculator()">🧮</button>
+</div>
+
+<!-- Weightage calculator panel -->
+<div id="calcModal" class="modal-overlay">
+  <div class="modal-box" id="calcBox">
+    <div class="resize-handle resize-handle-corner" data-dir="corner" title="Drag to resize"></div>
+    <div class="resize-handle resize-handle-top" data-dir="top" title="Drag to resize height"></div>
+    <div class="resize-handle resize-handle-left" data-dir="left" title="Drag to resize width"></div>
+    <div class="modal-header">
+      <h3>🧮 Weightage Calculator</h3>
+      <button class="modal-close" onclick="closeCalculator()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="jira-filter-field" style="max-width:260px;margin-bottom:8px">
+        <label for="calcRole">Role</label>
+        <select id="calcRole" onchange="renderCalculator()">
+          <option value="SDET">SDET</option>
+          <option value="Lead Engineer">Lead Engineer</option>
+        </select>
+      </div>
+      <p id="calcSourceNote" style="font-size:12px;color:#6b778c;margin-bottom:12px"></p>
+      <div class="calc-table-wrap">
+      <table class="calc-table">
+        <thead>
+          <tr>
+            <th>Metrics List</th>
+            <th class="num">Target</th>
+            <th class="num">Weightage</th>
+            <th>Actual</th>
+            <th class="num">Score</th>
+          </tr>
+        </thead>
+        <tbody id="calcBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right;font-weight:700">Total Weighted Score</td>
+            <td class="num" id="calcTotal" style="font-weight:700">—</td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="resetCalculator()">↺ Reset</button>
+      <button class="btn btn-primary btn-sm" onclick="calculateWeightage()">Calculate</button>
+    </div>
+  </div>
 </div>
 
 <!-- Remove this line: -->
@@ -400,6 +550,8 @@
       hide('tilesRow'); hide('tableCard'); hide('jiraCard'); show('placeholder')
       document.getElementById('userChip').classList.remove('show')
       selectedEmail = null
+      currentTotals = null
+      refreshCalculatorIfOpen()
       return
     }
     // Show info chip
@@ -431,6 +583,134 @@
       hide('jiraCard')
     }
   }
+
+  function toggleCollapse(button, targetId) {
+    const el = document.getElementById(targetId)
+    const collapsed = el.classList.toggle('collapsed')
+    button.textContent = collapsed ? '▸' : '▾'
+    button.setAttribute('aria-expanded', String(!collapsed))
+  }
+
+  /* ── Weightage calculator ── */
+  let currentTotals = null   // totals for the currently selected team member, keyed by field name
+  const WEIGHTAGE_METRICS = {
+    'SDET': [
+      { label:'User Stories completed in a year', target:40, weightage:45, field:'user_stories_completed' },
+      { label:'Valid defects identified in a year', target:80, weightage:18, field:'valid_defects' },
+      { label:'Invalid defects identified in a year', target:5, weightage:-2, field:'invalid_defects' },
+      { label:'Voluntary opportunities in a year', target:5, weightage:5, field:'volunteer_opportunities' },
+      { label:'Defects leaked into production – P0 defects (Hot fix)', target:2, weightage:-15, field:'p0_defects_leaked' },
+      { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
+      { label:'Demo opportunities in a year', target:12, weightage:5, field:'demo_opportunities' }
+    ],
+    'Lead Engineer': [
+      { label:'User Stories completed in a year', target:45, weightage:35, field:'user_stories_completed' },
+      { label:'Valid defects identified in a year', target:95, weightage:13, field:'valid_defects' },
+      { label:'Invalid defects identified in a year', target:3, weightage:-2, field:'invalid_defects' },
+      { label:'Initiatives proposed – for Problem solving', target:4, weightage:10, field:null },
+      { label:'Defects leaked into production – P0 defects (Hot fix)', target:1, weightage:-25, field:'p0_defects_leaked' },
+      { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
+      { label:'Demo opportunities in a year', target:20, weightage:5, field:'demo_opportunities' }
+    ]
+  }
+
+  function openCalculator() {
+    matchCalculatorRoleToSelectedEmployee()
+    document.getElementById('calcModal').classList.add('open')
+    renderCalculator()
+  }
+  function matchCalculatorRoleToSelectedEmployee() {
+    const roleSel  = document.getElementById('calcRole')
+    const chipRole = document.getElementById('chipRole').textContent.trim()
+    if (selectedEmail && WEIGHTAGE_METRICS[chipRole]) roleSel.value = chipRole
+  }
+  // Keep the calculator's actual numbers in sync with the selected employee
+  // whenever the dropdown changes, instead of requiring a manual Reset click.
+  function refreshCalculatorIfOpen() {
+    if (!document.getElementById('calcModal').classList.contains('open')) return
+    matchCalculatorRoleToSelectedEmployee()
+    renderCalculator()
+  }
+  function closeCalculator() {
+    document.getElementById('calcModal').classList.remove('open')
+    const box = document.getElementById('calcBox')
+    box.style.width = ''
+    box.style.height = ''
+  }
+  function renderCalculator() {
+    const metrics = WEIGHTAGE_METRICS[document.getElementById('calcRole').value]
+    const noteEl = document.getElementById('calcSourceNote')
+    if (selectedEmail && currentTotals) {
+      noteEl.textContent = `Showing actual numbers for: ${document.getElementById('chipName').textContent} (${selectedEmail})`
+    } else {
+      noteEl.textContent = 'No team member selected — enter values manually.'
+    }
+    document.getElementById('calcBody').innerHTML = metrics.map((m,i) => {
+      const prefill = (selectedEmail && currentTotals && m.field != null && typeof currentTotals[m.field] === 'number')
+        ? currentTotals[m.field] : ''
+      return `
+      <tr>
+        <td>${m.label}</td>
+        <td class="num">${m.target}</td>
+        <td class="num">${m.weightage}%</td>
+        <td><input type="number" class="calc-input" id="calcActual${i}" min="0" step="1" placeholder="0" value="${prefill}"></td>
+        <td class="num" id="calcScore${i}">—</td>
+      </tr>`
+    }).join('')
+    document.getElementById('calcTotal').textContent = '—'
+  }
+  function calculateWeightage() {
+    const metrics = WEIGHTAGE_METRICS[document.getElementById('calcRole').value]
+    let total = 0
+    metrics.forEach((m,i) => {
+      const actual = parseFloat(document.getElementById('calcActual'+i).value)
+      const scoreEl = document.getElementById('calcScore'+i)
+      if (isNaN(actual) || !m.target) { scoreEl.textContent = '—'; return }
+      let ratio = actual / m.target
+      if (m.weightage > 0) ratio = Math.min(ratio, 1)   // cap credit at 100% of target, penalties are uncapped
+      const score = ratio * m.weightage
+      scoreEl.textContent = score.toFixed(1) + '%'
+      total += score
+    })
+    document.getElementById('calcTotal').textContent = total.toFixed(1) + '%'
+  }
+  function resetCalculator() {
+    renderCalculator()
+  }
+
+  /* Draggable resize handles (top-left corner + edges), like resizing an image in PPT */
+  ;(function initCalcResize() {
+    const box = document.getElementById('calcBox')
+    box.querySelectorAll('.resize-handle').forEach(handle => {
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault()
+        const dir    = handle.dataset.dir
+        const startX = e.clientX, startY = e.clientY
+        const rect   = box.getBoundingClientRect()
+        const startW = rect.width, startH = rect.height
+        const minW = 320, minH = 280
+        const maxW = window.innerWidth  - 48
+        const maxH = window.innerHeight - 120
+
+        function onMove(ev) {
+          if (dir === 'corner' || dir === 'left') {
+            const w = Math.min(maxW, Math.max(minW, startW - (ev.clientX - startX)))
+            box.style.width = w + 'px'
+          }
+          if (dir === 'corner' || dir === 'top') {
+            const h = Math.min(maxH, Math.max(minH, startH - (ev.clientY - startY)))
+            box.style.height = h + 'px'
+          }
+        }
+        function onUp() {
+          document.removeEventListener('mousemove', onMove)
+          document.removeEventListener('mouseup', onUp)
+        }
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('mouseup', onUp)
+      })
+    })
+  })()
 
   /* ── Inline Jira metrics ── */
   const JIRA_CARDS = [
@@ -497,8 +777,10 @@
   }
   function renderJiraSpaceDetails(rows) {
     if (!rows || !rows.length) return '<div class="jira-details">No items found</div>'
-    const trs = rows.map(r => `<tr><td>${r.space}</td><td>${r.count}</td></tr>`).join('')
-    return `<div class="jira-details"><table class="jira-space-table"><tbody>${trs}</tbody></table></div>`
+    const items = rows.map(r =>
+      `<div class="jira-space-row"><span class="jira-space-name">${r.space}</span><span class="jira-space-count">${r.count}</span></div>`
+    ).join('')
+    return `<div class="jira-details">${items}</div>`
   }
   function toggleJiraSpaces(button) {
     const details  = button.nextElementSibling
@@ -510,16 +792,34 @@
   function updateTiles(rows) {
     document.getElementById('tEntries').textContent  = rows.length
     document.getElementById('tStories').textContent  =
-      avg(rows,'user_stories_completed')
+      total(rows,'user_stories_completed')
     document.getElementById('tDefects').textContent  =
-      avg(rows,'valid_defects')
+      total(rows,'valid_defects')
+    document.getElementById('tInvalidDefects').textContent =
+      total(rows,'invalid_defects')
+    document.getElementById('tP0Leaked').textContent =
+      total(rows,'p0_defects_leaked')
+    document.getElementById('tComplexStories').textContent =
+      total(rows,'complex_stories')
     document.getElementById('tVolunteer').textContent =
-      avg(rows,'volunteer_opportunities')
+      total(rows,'volunteer_opportunities')
+    document.getElementById('tDemoOpps').textContent =
+      total(rows,'demo_opportunities')
+    currentTotals = {
+      user_stories_completed:  total(rows,'user_stories_completed'),
+      valid_defects:           total(rows,'valid_defects'),
+      invalid_defects:         total(rows,'invalid_defects'),
+      p0_defects_leaked:       total(rows,'p0_defects_leaked'),
+      complex_stories:         total(rows,'complex_stories'),
+      volunteer_opportunities: total(rows,'volunteer_opportunities'),
+      demo_opportunities:      total(rows,'demo_opportunities')
+    }
+    refreshCalculatorIfOpen()
   }
-  function avg(rows,field){
+  function total(rows,field){
     const vals=rows.map(r=>r[field]).filter(v=>v!=null)
     if(!vals.length) return '—'
-    return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)
+    return vals.reduce((a,b)=>a+b,0)
   }
 
   /* ── Filters ── */

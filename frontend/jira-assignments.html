@@ -24,6 +24,7 @@
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             margin-top: 30px;
+            align-items: start;
         }
         .assignment-card {
             background: #fff;
@@ -53,9 +54,11 @@
                 padding:6px 10px; }
         .space-toggle:hover { background:#ebecf0; }
         .space-details { border-top:1px solid #ebecf0; margin-top:12px; padding-top:10px; text-align:left; }
-        .space-table { border-collapse:collapse; width:100%; }
-        .space-table td { border-bottom:1px solid #ebecf0; font-size:12px; padding:6px 2px; }
-        .space-table td:last-child { font-weight:600; text-align:right; }
+        .space-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+                     border-bottom:1px solid #ebecf0; font-size:12px; padding:6px 2px; }
+        .space-row:last-child { border-bottom:none; }
+        .space-row .space-name { overflow-wrap:break-word; min-width:0; }
+        .space-row .space-count { font-weight:600; flex-shrink:0; }
         .card-stories { border-top: 4px solid #4CAF50; }
         .card-defects-assigned { border-top: 4px solid #FF9800; }
         .card-defects-reported { border-top: 4px solid #F44336; }
@@ -157,8 +160,10 @@
 
     function renderSpaceDetails(rows) {
         if (!rows || rows.length === 0) return '<div class="space-details">No items found</div>';
-        const entries = rows.map(row => `<tr><td>${row.space}</td><td>${row.count}</td></tr>`).join('');
-        return `<div class="space-details"><table class="space-table"><tbody>${entries}</tbody></table></div>`;
+        const entries = rows.map(row =>
+            `<div class="space-row"><span class="space-name">${row.space}</span><span class="space-count">${row.count}</span></div>`
+        ).join('');
+        return `<div class="space-details">${entries}</div>`;
     }
 
     function renderAssignmentCard(card, data, searchLinks, spaceBreakdowns) {
