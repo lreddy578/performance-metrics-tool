@@ -88,6 +88,11 @@
                                   font-size:13px; font-weight:600; cursor:pointer; }
         .filter-actions .apply-btn { background:#0052cc; color:#fff; }
         .filter-actions .clear-btn { background:#f4f5f7; color:#172b4d; }
+        .filter-toggle { background:#f4f5f7; border:1px solid #dfe1e6; border-radius:5px;
+                 color:#172b4d; cursor:pointer; font-size:12px; padding:6px 10px;
+                 margin-bottom:10px; }
+        .filter-toggle:hover { background:#ebecf0; }
+        .filter-panel.collapsed { display:none; }
     </style>
 </head>
 <body>
@@ -104,7 +109,9 @@
 <div class="assignments-container">
     <div id="userBanner"></div>
 
-    <div class="filter-bar">
+        <button class="filter-toggle" type="button" aria-expanded="false"
+            onclick="toggleFilter(this,'jiraAssignmentFilters')">☰ Filters</button>
+        <div class="filter-bar filter-panel collapsed" id="jiraAssignmentFilters">
         <div class="filter-field">
             <label for="f_version">Release / Fix Version</label>
             <input type="text" id="f_version" placeholder="e.g. AA.R.4.0.0">
@@ -151,6 +158,13 @@
         document.getElementById('f_start').value = '';
         document.getElementById('f_end').value = '';
         loadAssignments();
+    }
+
+    function toggleFilter(button, targetId) {
+        const panel = document.getElementById(targetId);
+        const collapsed = panel.classList.toggle('collapsed');
+        button.textContent = collapsed ? '☰ Filters' : '✕ Hide Filters';
+        button.setAttribute('aria-expanded', String(!collapsed));
     }
 
     function renderSearchLink(url) {
@@ -236,17 +250,12 @@
             }
 
             const data = await jiraResp.json();
-            const searchLinks = data.search_links || {};
-            const spaceBreakdowns = data.space_breakdowns || {};
+            const searchLinks = data.metric_search_links || {};
+            const spaceBreakdowns = data.metric_space_breakdowns || {};
             const cards = [
-                { key:'stories_assigned', label:'Stories Assigned', className:'card-stories' },
-                { key:'defects_assigned', label:'Defects Assigned', className:'card-defects-assigned' },
-                { key:'defects_reported', label:'Defects Reported', className:'card-defects-reported' },
-                { key:'bugs_assigned', label:'Bugs Assigned', className:'card-bugs-assigned' },
-                { key:'bugs_reported', label:'Bugs Reported', className:'card-bugs-reported' },
-                { key:'test_tasks_assigned', label:'Tests Assigned', className:'card-test-tasks' },
-                { key:'test_plans_assigned', label:'Test Plans Assigned', className:'card-test-plans' },
-                { key:'test_executions_assigned', label:'Test Executions Assigned', className:'card-test-executions' }
+                { key:'user_stories_total', label:'User Stories', className:'card-stories' },
+                { key:'valid_defects_total', label:'Valid Defects', className:'card-defects-reported' },
+                { key:'invalid_defects_total', label:'Invalid Defects', className:'card-defects-assigned' }
             ];
             contentEl.innerHTML = `
                 <div class="assignments-grid">${cards.map(card =>

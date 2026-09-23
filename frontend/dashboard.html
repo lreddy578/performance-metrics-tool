@@ -48,14 +48,6 @@
               font-weight:700;margin-left:8px;
               border:1px solid rgba(255,255,255,.4)}
 
-    /* Tiles */
-    .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;
-           margin-bottom:20px}
-    .tile{background:#fff;border-radius:8px;padding:18px 20px;
-          box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
-    .tile .val{font-size:28px;font-weight:700;color:#0052cc}
-    .tile .lbl{font-size:12px;color:#6b778c;margin-top:4px}
-
     /* Filter bar */
     .filter-bar{display:flex;gap:10px;flex-wrap:wrap;
                 align-items:center;margin-bottom:16px}
@@ -64,6 +56,11 @@
       padding:8px 12px;border:1px solid #dfe1e6;border-radius:4px;
       font-size:13px;color:#172b4d;background:#fff}
     .filter-bar input:focus{outline:none;border-color:#0052cc}
+    .filter-toggle{background:#f4f5f7;border:1px solid #dfe1e6;border-radius:5px;
+                   color:#172b4d;cursor:pointer;font-size:12px;padding:6px 10px;
+                   display:block;margin-bottom:10px}
+    .filter-toggle:hover{background:#ebecf0}
+    .filter-panel.collapsed{display:none}
     .filter-label{font-size:12px;font-weight:600;color:#6b778c;
                   white-space:nowrap}
 
@@ -156,25 +153,29 @@
                max-width:calc(100vw - 48px);max-height:calc(100vh - 120px);
                overflow:hidden;
                box-shadow:0 10px 30px rgba(9,30,66,.3);
-               border:1px solid #ebecf0;display:flex;flex-direction:column}
-    .resize-handle{position:absolute;background:#fff;border:2px solid #0052cc;
-                   z-index:10}
-    .resize-handle:hover{background:#deebff}
+               border:1px solid #b3d4ff;display:flex;flex-direction:column}
+    .resize-handle{position:absolute;background:transparent;border:none;
+             z-index:10}
+    .resize-handle:hover{background:transparent}
     .resize-handle-corner{top:-6px;left:-6px;width:12px;height:12px;
                           border-radius:50%;cursor:nwse-resize}
     .resize-handle-top{top:-5px;left:50%;transform:translateX(-50%);
-                       width:28px;height:8px;border-radius:4px;cursor:ns-resize}
+                       width:100%;height:10px;border-radius:4px;cursor:ns-resize}
     .resize-handle-left{left:-5px;top:50%;transform:translateY(-50%);
-                        width:8px;height:28px;border-radius:4px;cursor:ew-resize}
+                        width:10px;height:100%;border-radius:4px;cursor:ew-resize}
     .modal-header{display:flex;align-items:center;justify-content:space-between;
-                  padding:16px 20px;border-bottom:1px solid #ebecf0;flex-shrink:0}
+                  padding:16px 20px;background:#e9f2ff;
+                  border-bottom:1px solid #b3d4ff;flex-shrink:0}
     .modal-header h3{font-size:16px;font-weight:600}
+    .calc-selected-user{font-weight:700;color:#172b4d;font-size:13px}
     .modal-close{background:none;border:none;font-size:16px;cursor:pointer;
                  color:#6b778c;padding:4px 8px}
     .modal-close:hover{color:#172b4d}
-    .modal-body{padding:20px;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
+    .modal-body{padding:20px;background:#fff;overflow-y:auto;overflow-x:hidden;
+                flex:1;min-width:0}
     .modal-footer{display:flex;justify-content:flex-end;gap:8px;
-                  padding:14px 20px;border-top:1px solid #ebecf0;flex-shrink:0}
+                  padding:14px 20px;background:#f8f9fa;
+                  border-top:1px solid #dfe1e6;flex-shrink:0}
     .calc-table-wrap{overflow-x:auto;overflow-y:hidden;min-width:0;width:100%;
                      margin-bottom:4px}
     .calc-table-wrap::-webkit-scrollbar{height:12px}
@@ -182,14 +183,18 @@
     .calc-table-wrap::-webkit-scrollbar-thumb{background:#8993a4;border-radius:6px}
     .calc-table-wrap::-webkit-scrollbar-thumb:hover{background:#6b778c}
     .calc-table{border-collapse:collapse;width:100%;min-width:560px;font-size:12px}
-    .calc-table th{background:#f8f9fa;padding:8px 10px;text-align:left;
-                   font-size:11px;font-weight:700;color:#6b778c;
+    .calc-table th{background:#f1f6fc;padding:8px 10px;text-align:left;
+             font-size:11px;font-weight:700;color:#0052cc;
                    text-transform:uppercase;border-bottom:2px solid #dfe1e6}
-    .calc-table td{padding:8px 10px;border-bottom:1px solid #f4f5f7;vertical-align:middle}
+    .calc-table tbody tr:nth-child(even){background:#fbfcfe}
+    .calc-table td{padding:8px 10px;border-bottom:1px solid #ebecf0;vertical-align:middle}
     .calc-table td.num{text-align:right;white-space:nowrap}
-    .calc-input{width:70px;padding:6px 8px;border:1px solid #dfe1e6;
-                border-radius:4px;font-size:13px;text-align:right}
-    .calc-table tfoot td{border-bottom:none;border-top:2px solid #dfe1e6}
+    .calc-input{width:70px;padding:6px 8px;border:1px solid #b3d4ff;
+          border-radius:4px;background:#f8fbff;font-size:13px;text-align:right}
+    .calc-input:focus{outline:none;border-color:#0052cc;
+              box-shadow:0 0 0 2px rgba(0,82,204,.15)}
+    .calc-table tfoot td{border-bottom:none;border-top:2px solid #b3d4ff;
+               background:#f8f9fa;color:#172b4d}
 
     /* Floating chat-bubble style trigger */
     .calc-fab{position:fixed;right:24px;bottom:24px;width:58px;height:58px;
@@ -250,42 +255,6 @@
     </div>
   </div>
 
-  <!-- Summary tiles -->
-  <div id="tilesRow" class="tiles" style="display:none">
-    <div class="tile">
-      <div class="val" id="tEntries">—</div>
-      <div class="lbl">Total Entries</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tStories">—</div>
-      <div class="lbl">Total User Stories</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tDefects">—</div>
-      <div class="lbl">Total Valid Defects</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tInvalidDefects">—</div>
-      <div class="lbl">Total Invalid Defects</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tP0Leaked">—</div>
-      <div class="lbl">Total P0 Leaked</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tComplexStories">—</div>
-      <div class="lbl">Total Complex Stories</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tVolunteer">—</div>
-      <div class="lbl">Total Volunteer Opps</div>
-    </div>
-    <div class="tile">
-      <div class="val" id="tDemoOpps">—</div>
-      <div class="lbl">Total Demo Opps</div>
-    </div>
-  </div>
-
   <!-- Data table -->
   <div id="tableCard" class="card" style="display:none">
     <div class="tbl-header">
@@ -297,7 +266,9 @@
       <span class="badge" id="rowBadge">0 rows</span>
     </div>
     <div class="collapsible" id="entriesCollapsible">
-      <div class="filter-bar">
+      <button class="filter-toggle" type="button" aria-expanded="false"
+              onclick="toggleFilter(this,'entriesFilters')">☰ Filters</button>
+      <div class="filter-bar filter-panel collapsed" id="entriesFilters">
         <input type="text" id="searchBox" style="min-width:200px"
                placeholder="🔍 Search notes or date…"
                oninput="applyFilters()"/>
@@ -313,8 +284,7 @@
         <thead>
           <tr>
             <th onclick="sortBy('_idx')">#</th>
-            <th onclick="sortBy('date')">Date</th>
-            <th onclick="sortBy('time')">Time (UTC)</th>
+            <th onclick="sortBy('date')">Date &amp; Time (UTC)</th>
             <th onclick="sortBy('user_stories_completed')"
                 class="num">User Stories</th>
             <th onclick="sortBy('valid_defects')"
@@ -323,8 +293,9 @@
                 class="num">Invalid Defects</th>
             <th onclick="sortBy('p0_defects_leaked')"
                 class="num">P0 Leaked</th>
-            <th onclick="sortBy('complex_stories')"
-                class="num">Complex Stories</th>
+            <!-- Future metric: re-enable Complex Stories when it is adopted. -->
+            <!-- <th onclick="sortBy('complex_stories')"
+              class="num">Complex Stories</th> -->
             <th onclick="sortBy('volunteer_opportunities')"
                 class="num">Volunteer Opps</th>
             <th onclick="sortBy('demo_opportunities')"
@@ -349,7 +320,9 @@
       <span class="badge" id="jiraBadge"></span>
     </div>
     <div class="collapsible" id="jiraCollapsible">
-      <div class="jira-filter-bar">
+      <button class="filter-toggle" type="button" aria-expanded="false"
+              onclick="toggleFilter(this,'jiraFilters')">☰ Filters</button>
+      <div class="jira-filter-bar filter-panel collapsed" id="jiraFilters">
         <div class="jira-filter-field">
           <label for="jiraVersion">Release / Fix Version</label>
           <input type="text" id="jiraVersion" placeholder="e.g. AA.R.4.0.0">
@@ -397,7 +370,7 @@
     <div class="resize-handle resize-handle-top" data-dir="top" title="Drag to resize height"></div>
     <div class="resize-handle resize-handle-left" data-dir="left" title="Drag to resize width"></div>
     <div class="modal-header">
-      <h3>🧮 Weightage Calculator</h3>
+      <h3>🧮 Weightage Calculator <span id="calcSelectedUser" class="calc-selected-user"></span></h3>
       <button class="modal-close" onclick="closeCalculator()">✕</button>
     </div>
     <div class="modal-body">
@@ -408,7 +381,6 @@
           <option value="Lead Engineer">Lead Engineer</option>
         </select>
       </div>
-      <p id="calcSourceNote" style="font-size:12px;color:#6b778c;margin-bottom:12px"></p>
       <div class="calc-table-wrap">
       <table class="calc-table">
         <thead>
@@ -547,7 +519,7 @@
   async function onReporteeChange() {
     const rid = document.getElementById('reporteeSelect').value
     if (!rid) {
-      hide('tilesRow'); hide('tableCard'); hide('jiraCard'); show('placeholder')
+      hide('tableCard'); hide('jiraCard'); show('placeholder')
       document.getElementById('userChip').classList.remove('show')
       selectedEmail = null
       currentTotals = null
@@ -573,8 +545,8 @@
     selectedEmail = u ? u.email : null
     const resp = await apiGet(`/api/metrics/${parseInt(rid)}`)
     allEntries = resp.entries
-    updateTiles(allEntries)
-    show('tilesRow'); show('tableCard'); hide('placeholder')
+    updateCurrentTotals(allEntries)
+    show('tableCard'); hide('placeholder')
     applyFilters()
 
     if (selectedEmail) {
@@ -590,6 +562,12 @@
     button.textContent = collapsed ? '▸' : '▾'
     button.setAttribute('aria-expanded', String(!collapsed))
   }
+  function toggleFilter(button, targetId) {
+    const panel = document.getElementById(targetId)
+    const collapsed = panel.classList.toggle('collapsed')
+    button.textContent = collapsed ? '☰ Filters' : '✕ Hide Filters'
+    button.setAttribute('aria-expanded', String(!collapsed))
+  }
 
   /* ── Weightage calculator ── */
   let currentTotals = null   // totals for the currently selected team member, keyed by field name
@@ -600,7 +578,8 @@
       { label:'Invalid defects identified in a year', target:5, weightage:-2, field:'invalid_defects' },
       { label:'Voluntary opportunities in a year', target:5, weightage:5, field:'volunteer_opportunities' },
       { label:'Defects leaked into production – P0 defects (Hot fix)', target:2, weightage:-15, field:'p0_defects_leaked' },
-      { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
+      // Future metric: re-enable Complex Stories when it is adopted.
+      // { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
       { label:'Demo opportunities in a year', target:12, weightage:5, field:'demo_opportunities' }
     ],
     'Lead Engineer': [
@@ -609,7 +588,8 @@
       { label:'Invalid defects identified in a year', target:3, weightage:-2, field:'invalid_defects' },
       { label:'Initiatives proposed – for Problem solving', target:4, weightage:10, field:null },
       { label:'Defects leaked into production – P0 defects (Hot fix)', target:1, weightage:-25, field:'p0_defects_leaked' },
-      { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
+      // Future metric: re-enable Complex Stories when it is adopted.
+      // { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
       { label:'Demo opportunities in a year', target:20, weightage:5, field:'demo_opportunities' }
     ]
   }
@@ -639,11 +619,11 @@
   }
   function renderCalculator() {
     const metrics = WEIGHTAGE_METRICS[document.getElementById('calcRole').value]
-    const noteEl = document.getElementById('calcSourceNote')
+    const selectedUserEl = document.getElementById('calcSelectedUser')
     if (selectedEmail && currentTotals) {
-      noteEl.textContent = `Showing actual numbers for: ${document.getElementById('chipName').textContent} (${selectedEmail})`
+      selectedUserEl.textContent = `(${document.getElementById('chipName').textContent})`
     } else {
-      noteEl.textContent = 'No team member selected — enter values manually.'
+      selectedUserEl.textContent = ''
     }
     document.getElementById('calcBody').innerHTML = metrics.map((m,i) => {
       const prefill = (selectedEmail && currentTotals && m.field != null && typeof currentTotals[m.field] === 'number')
@@ -714,14 +694,10 @@
 
   /* ── Inline Jira metrics ── */
   const JIRA_CARDS = [
-    { key:'stories_assigned', label:'Stories Assigned' },
-    { key:'defects_assigned', label:'Defects Assigned' },
-    { key:'defects_reported', label:'Defects Reported' },
-    { key:'bugs_assigned', label:'Bugs Assigned' },
-    { key:'bugs_reported', label:'Bugs Reported' },
-    { key:'test_tasks_assigned', label:'Tests Assigned' },
-    { key:'test_plans_assigned', label:'Test Plans Assigned' },
-    { key:'test_executions_assigned', label:'Test Executions Assigned' }
+    { key:'user_stories_total', label:'User Stories' },
+    { key:'valid_defects_total', label:'Valid Defects' },
+    { key:'invalid_defects_total', label:'Invalid Defects' },
+    { key:'p0_defects_total', label:'P0 Defects' }
   ]
 
   function clearJiraFilters() {
@@ -750,8 +726,8 @@
     try {
       const data = await apiGet(`/api/jira/assignments?${params.toString()}`)
       badgeEl.textContent = selectedEmail
-      const links  = data.search_links     || {}
-      const spaces = data.space_breakdowns || {}
+      const links  = data.metric_search_links     || {}
+      const spaces = data.metric_space_breakdowns || {}
       contentEl.innerHTML = `<div class="jira-grid">${
         JIRA_CARDS.map(c => renderJiraCard(c, data, links, spaces)).join('')
       }</div>`
@@ -789,22 +765,7 @@
     button.textContent = expanded ? 'Show by space' : 'Hide by space'
     details.hidden = expanded
   }
-  function updateTiles(rows) {
-    document.getElementById('tEntries').textContent  = rows.length
-    document.getElementById('tStories').textContent  =
-      total(rows,'user_stories_completed')
-    document.getElementById('tDefects').textContent  =
-      total(rows,'valid_defects')
-    document.getElementById('tInvalidDefects').textContent =
-      total(rows,'invalid_defects')
-    document.getElementById('tP0Leaked').textContent =
-      total(rows,'p0_defects_leaked')
-    document.getElementById('tComplexStories').textContent =
-      total(rows,'complex_stories')
-    document.getElementById('tVolunteer').textContent =
-      total(rows,'volunteer_opportunities')
-    document.getElementById('tDemoOpps').textContent =
-      total(rows,'demo_opportunities')
+  function updateCurrentTotals(rows) {
     currentTotals = {
       user_stories_completed:  total(rows,'user_stories_completed'),
       valid_defects:           total(rows,'valid_defects'),
@@ -872,7 +833,7 @@
     const tbody = document.getElementById('tbody')
     if (!rows.length) {
       tbody.innerHTML = `
-        <tr><td colspan="11"
+        <tr><td colspan="10"
                 style="text-align:center;padding:40px;color:#6b778c">
           😕 No entries match your filters.
         </td></tr>`
@@ -881,15 +842,17 @@
     tbody.innerHTML = rows.map((e,i) => `
       <tr>
         <td style="color:#6b778c">${i+1}</td>
-        <td><strong>${hl(e.date||'—',q)}</strong></td>
-        <td style="color:#6b778c;font-size:12px">
-          ${(e.timestamp||'').substring(11,19)||'—'}
+        <td><strong>${hl(e.date||'—',q)}</strong>
+          <span style="color:#6b778c;font-size:12px">
+            ${(e.timestamp||'').substring(11,19)||'—'}
+          </span>
         </td>
         <td class="num">${fv(e.user_stories_completed)}</td>
         <td class="num">${fv(e.valid_defects)}</td>
         <td class="num">${fv(e.invalid_defects)}</td>
         <td class="num">${fv(e.p0_defects_leaked)}</td>
-        <td class="num">${fv(e.complex_stories)}</td>
+        <!-- Future metric: re-enable Complex Stories when it is adopted. -->
+        <!-- <td class="num">${fv(e.complex_stories)}</td> -->
         <td class="num">${fv(e.volunteer_opportunities)}</td>
         <td class="num">${fv(e.demo_opportunities)}</td>
         <td class="note-cell" title="${esc(e.notes)}">
@@ -901,7 +864,9 @@
   /* ── Totals row ── */
   const NUMERIC_FIELDS = [
     'user_stories_completed', 'valid_defects', 'invalid_defects',
-    'p0_defects_leaked', 'complex_stories', 'volunteer_opportunities',
+    'p0_defects_leaked',
+    // Future metric: add 'complex_stories' back when it is adopted.
+    'volunteer_opportunities',
     'demo_opportunities'
   ]
   function buildTotalsRow(rows) {
@@ -910,7 +875,7 @@
       rows.reduce((s, e) => s + (e[f] != null ? e[f] : 0), 0))
     return `
       <tr style="font-weight:700;background:#f4f5f7">
-        <td colspan="3">Total</td>
+        <td colspan="2">Total</td>
         ${sums.map(s => `<td class="num">${s}</td>`).join('')}
         <td class="note-cell"></td>
       </tr>`

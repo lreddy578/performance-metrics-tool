@@ -83,15 +83,16 @@
     .badge{background:#ebecf0;color:#6b778c;padding:2px 10px;
            border-radius:10px;font-size:12px}
 
-    table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
-    thead th{background:#f8f9fa;padding:11px 14px;text-align:left;
-             font-size:11px;font-weight:700;color:#6b778c;
-             text-transform:uppercase;letter-spacing:.5px;
-             border-bottom:2px solid #dfe1e6;white-space:nowrap}
-    tbody td{padding:10px 14px;border-bottom:1px solid #f4f5f7;
-             vertical-align:middle}
-    tbody tr:last-child td{border-bottom:none}
-    tbody tr:hover td{background:#f8f9fa}
+        table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px;
+          color:#172b4d}
+        thead th{background:#f4f5f7;padding:11px 14px;text-align:left;
+         font-size:11px;font-weight:700;color:#42526e;
+         text-transform:uppercase;letter-spacing:.5px;
+         border-bottom:1px solid #dfe1e6;white-space:nowrap}
+        tbody td{padding:10px 14px;border-bottom:1px solid #ebecf0;
+         vertical-align:middle;background:#fff}
+        tbody tr:last-child td{border-bottom:none;background:#f4f5f7}
+        tbody tr:not(:last-child):hover td{background:#f8f9fa}
     .num{text-align:right}
     .note-cell{max-width:160px;overflow:hidden;text-overflow:ellipsis;
                white-space:nowrap;color:#6b778c;font-style:italic}
@@ -129,6 +130,36 @@
     .alert-ok {background:#e3fcef;color:#006644;border-left:4px solid #36b37e}
 
     .loading{text-align:center;padding:60px;color:#6b778c;font-size:15px}
+
+    .jira-filter-bar{display:flex;gap:10px;flex-wrap:wrap;
+             align-items:end;margin-bottom:16px}
+    .jira-filter-bar input{padding:7px 10px;border:1px solid #dfe1e6;
+                 border-radius:6px;font-size:13px;min-width:150px}
+    .jira-filter-field{display:flex;flex-direction:column;gap:4px}
+    .jira-filter-field label{font-size:12px;color:#6b778c;font-weight:600}
+    .jira-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+          gap:16px;align-items:start}
+    .jira-card{background:#fff;border:1px solid #ebecf0;border-radius:10px;
+          padding:18px;text-align:center;min-width:0;overflow:hidden}
+    .jira-card .jira-label{font-size:.85rem;color:#666}
+    .jira-card .jira-count{font-size:2rem;font-weight:bold;margin:8px 0}
+    .jira-link{color:#0052cc;display:inline-block;font-size:12px;
+          font-weight:600;margin-top:4px;text-decoration:none}
+    .jira-link:hover{text-decoration:underline}
+    .jira-toggle{background:#f4f5f7;border:1px solid #dfe1e6;border-radius:5px;
+           color:#172b4d;cursor:pointer;font-size:12px;margin-top:8px;
+           padding:6px 10px}
+    .jira-toggle:hover{background:#ebecf0}
+    .jira-details{border-top:1px solid #ebecf0;margin-top:12px;
+            padding-top:10px;text-align:left}
+    .jira-space-row{display:flex;justify-content:space-between;align-items:baseline;
+            gap:8px;border-bottom:1px solid #ebecf0;font-size:12px;
+            padding:6px 2px}
+    .jira-space-row:last-child{border-bottom:none}
+    .jira-space-row .jira-space-name{overflow-wrap:break-word;min-width:0}
+    .jira-space-row .jira-space-count{font-weight:600;flex-shrink:0}
+    .jira-loading,.jira-error{text-align:center;padding:24px;color:#6b778c}
+    .jira-error{color:#bf2600}
   </style>
 </head>
 <body>
@@ -142,7 +173,6 @@
     <a href="/dashboard" class="nav-link" id="dashNav">
       📋 Dashboard
     </a>
-    <a href="/jira-assignments" class="nav-link">🎫 My Jira Assignments</a>
     <!-- ✅ CHANGE 1: added id="adminLink" -->
     <a href="/admin" class="nav-link" id="adminLink">⚙️ Admin</a>
     <button class="btn-logout" onclick="logout()">
@@ -193,6 +223,32 @@
     <div class="tbl-wrap" id="tableWrap"></div>
   </div>
 
+  <div id="jiraCard" class="card" style="display:none">
+    <div class="tbl-meta">
+      <h3>🎫 Jira Metrics</h3>
+      <span class="badge" id="jiraBadge"></span>
+    </div>
+    <button class="btn btn-ghost btn-sm" type="button"
+            onclick="toggleUserJiraFilters(this)">☰ Filters</button>
+    <div id="jiraFilters" class="jira-filter-bar" style="display:none;margin-top:12px">
+      <div class="jira-filter-field">
+        <label for="jiraVersion">Release / Fix Version</label>
+        <input type="text" id="jiraVersion" placeholder="e.g. AA.R.4.0.0">
+      </div>
+      <div class="jira-filter-field">
+        <label for="jiraStart">Created From</label>
+        <input type="date" id="jiraStart">
+      </div>
+      <div class="jira-filter-field">
+        <label for="jiraEnd">Created To</label>
+        <input type="date" id="jiraEnd">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="loadUserJira()">Apply</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearUserJiraFilters()">✕ Clear</button>
+    </div>
+    <div id="jiraContent"></div>
+  </div>
+
 </div>
 
 <!-- ═══ ADD / EDIT METRICS MODAL ═══ -->
@@ -227,11 +283,14 @@
           <input type="number" id="m_p0_defects_leaked"
                  min="0" step="1" placeholder="0"/>
         </div>
+        <!-- Future metric: re-enable Complex Stories when it is adopted. -->
+        <!--
         <div class="field">
           <label>Complex Stories (8+ pts)</label>
           <input type="number" id="m_complex_stories"
                  min="0" step="1" placeholder="0"/>
         </div>
+        -->
         <div class="field">
           <label>Volunteer Opportunities</label>
           <input type="number" id="m_volunteer_opportunities"
@@ -262,11 +321,13 @@
 <script>
   const FIELDS = [
     'user_stories_completed','valid_defects','invalid_defects',
-    'p0_defects_leaked','complex_stories',
+    'p0_defects_leaked',
+    // Future metric: add 'complex_stories' back when it is adopted.
     'volunteer_opportunities','demo_opportunities',
   ]
 
   let currentUserId = null
+  let currentUserEmail = null
   let allEntries    = []
 
   /* ── Auth guard ── */
@@ -290,6 +351,7 @@
     try {
       const me = await apiGet('/api/auth/me')
       currentUserId = me.id
+      currentUserEmail = me.email
 
       document.getElementById('welcomeMsg').textContent =
         `Welcome, ${me.name}`
@@ -309,6 +371,7 @@
 
       renderProfile(me)
       await loadEntries()
+      await loadUserJira()
     } catch (e) {
       document.getElementById('loadingMsg').textContent =
         '❌ Failed to load profile. ' + errMsg(e)
@@ -337,6 +400,80 @@
     window.location.href = `/jira-auth?user_id=${currentUserId}`
   }
 
+  const USER_JIRA_CARDS = [
+    { key:'user_stories_total', label:'User Stories' },
+    { key:'valid_defects_total', label:'Valid Defects' },
+    { key:'invalid_defects_total', label:'Invalid Defects' },
+    { key:'p0_defects_total', label:'P0 Defects' }
+  ]
+
+  function toggleUserJiraFilters(button) {
+    const panel = document.getElementById('jiraFilters')
+    const visible = panel.style.display !== 'none'
+    panel.style.display = visible ? 'none' : 'flex'
+    button.textContent = visible ? '☰ Filters' : '✕ Hide Filters'
+  }
+
+  function clearUserJiraFilters() {
+    document.getElementById('jiraVersion').value = ''
+    document.getElementById('jiraStart').value = ''
+    document.getElementById('jiraEnd').value = ''
+    loadUserJira()
+  }
+
+  async function loadUserJira() {
+    if (!currentUserEmail) return
+    const card = document.getElementById('jiraCard')
+    const content = document.getElementById('jiraContent')
+    const badge = document.getElementById('jiraBadge')
+    card.style.display = ''
+    content.innerHTML = '<div class="jira-loading">Loading Jira metrics…</div>'
+    const params = new URLSearchParams({email: currentUserEmail})
+    const version = document.getElementById('jiraVersion').value.trim()
+    const start = document.getElementById('jiraStart').value
+    const end = document.getElementById('jiraEnd').value
+    if (version) params.set('fix_version', version)
+    if (start) params.set('start_date', start)
+    if (end) params.set('end_date', end)
+    try {
+      const data = await apiGet(`/api/jira/assignments?${params.toString()}`)
+      badge.textContent = currentUserEmail
+      const links = data.metric_search_links || {}
+      const spaces = data.metric_space_breakdowns || {}
+      content.innerHTML = `<div class="jira-grid">${USER_JIRA_CARDS.map(card =>
+        renderUserJiraCard(card, data, links, spaces)).join('')}</div>`
+    } catch (e) {
+      content.innerHTML = `<div class="jira-error">❌ ${errMsg(e)}</div>`
+    }
+  }
+
+  function renderUserJiraCard(card, data, links, spaces) {
+    return `
+      <div class="jira-card">
+        <div class="jira-label">${card.label}</div>
+        <div class="jira-count">${data[card.key] ?? '—'}</div>
+        ${links[card.key] ? `<a class="jira-link" href="${links[card.key]}" target="_blank" rel="noopener">Open Jira search</a>` : ''}
+        <button class="jira-toggle" type="button" aria-expanded="false"
+                onclick="toggleUserJiraSpaces(this)">Show by space</button>
+        <div hidden>${renderUserJiraSpaceDetails(spaces[card.key])}</div>
+      </div>`
+  }
+
+  function renderUserJiraSpaceDetails(rows) {
+    if (!rows || !rows.length) return '<div class="jira-details">No items found</div>'
+    return `<div class="jira-details">${rows.map(row =>
+      `<div class="jira-space-row"><span class="jira-space-name">${row.space}</span><span class="jira-space-count">${row.count}</span></div>`
+    ).join('')}</div>`
+  }
+
+  function toggleUserJiraSpaces(button) {
+    const details = button.nextElementSibling
+    const expanded = button.getAttribute('aria-expanded') === 'true'
+    button.setAttribute('aria-expanded', String(!expanded))
+    button.textContent = expanded ? 'Show by space' : 'Hide by space'
+    details.hidden = expanded
+  }
+
   /* ── Table ── */
   function renderTable(rows) {
     const n = rows.length
@@ -358,10 +495,11 @@
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Date</th><th>Time (UTC)</th>
+            <th>#</th><th>Date &amp; Time (UTC)</th>
             <th>User Stories</th><th>Valid Defects</th>
             <th>Invalid Defects</th><th>P0 Leaked</th>
-            <th>Complex Stories</th><th>Volunteer Opps</th>
+            <!-- Future metric: re-enable Complex Stories when it is adopted. -->
+            <!-- <th>Complex Stories</th> --><th>Volunteer Opps</th>
             <th>Demo Opps</th><th>Notes</th><th>Actions</th>
           </tr>
         </thead><tbody>`
@@ -370,13 +508,14 @@
       t += `
         <tr>
           <td style="color:#6b778c">${i + 1}</td>
-          <td><strong>${e.date || '—'}</strong></td>
-          <td style="color:#6b778c;font-size:12px">${time}</td>
+            <td><strong>${e.date || '—'}</strong>
+              <span style="color:#6b778c;font-size:12px">${time}</span></td>
           <td class="num">${fv(e.user_stories_completed)}</td>
           <td class="num">${fv(e.valid_defects)}</td>
           <td class="num">${fv(e.invalid_defects)}</td>
           <td class="num">${fv(e.p0_defects_leaked)}</td>
-          <td class="num">${fv(e.complex_stories)}</td>
+          <!-- Future metric: re-enable Complex Stories when it is adopted. -->
+          <!-- <td class="num">${fv(e.complex_stories)}</td> -->
           <td class="num">${fv(e.volunteer_opportunities)}</td>
           <td class="num">${fv(e.demo_opportunities)}</td>
           <td class="note-cell"
@@ -397,7 +536,9 @@
   /* ── Totals row ── */
   const NUMERIC_FIELDS = [
     'user_stories_completed', 'valid_defects', 'invalid_defects',
-    'p0_defects_leaked', 'complex_stories', 'volunteer_opportunities',
+    'p0_defects_leaked',
+    // Future metric: add 'complex_stories' back when it is adopted.
+    'volunteer_opportunities',
     'demo_opportunities'
   ]
   function buildTotalsRow(rows) {
@@ -406,7 +547,7 @@
       rows.reduce((s, e) => s + (e[f] != null ? e[f] : 0), 0))
     return `
       <tr style="font-weight:700;background:#f4f5f7">
-        <td colspan="3">Total</td>
+        <td colspan="2">Total</td>
         ${sums.map(s => `<td class="num">${s}</td>`).join('')}
         <td class="note-cell"></td>
         <td>—</td>

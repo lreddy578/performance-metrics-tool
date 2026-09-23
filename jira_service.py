@@ -16,6 +16,12 @@ class UserAssignments:
     test_tasks_assigned: int
     test_plans_assigned: int
     test_executions_assigned: int
+    user_stories_total: int
+    valid_defects_total: int
+    invalid_defects_total: int
+    p0_defects_total: int
+    metric_search_links: dict
+    metric_space_breakdowns: dict
     search_links: dict
     space_breakdowns: dict
     queries: dict
@@ -176,6 +182,7 @@ class JiraService:
 
         extra = self._build_extra_filters(fix_version or label, None, start_date, end_date)
         status_filter = ' AND status IN ("Completed", "Done", "Accepted", "Closed", "Released")'
+        cancelled_filter = ' AND status IN ("Cancelled", "Canceled")'
 
         def query(subject: str, issue_type: str) -> str:
             issue_extra = extra if issue_type == "Business Story" else self._build_extra_filters(
@@ -185,6 +192,35 @@ class JiraService:
 
         def count(subject: str, issue_type: str) -> int:
             return self._search_count(query(subject, issue_type))
+
+        assigned_metric_queries = {
+            "user_stories_total": " OR ".join(
+                f'{assignee} AND issuetype = "{issue_type}"{status_filter}{extra}'
+                for issue_type in ("Test", "Test Plan", "Business Story", "Defect", "Bug Task")
+            ),
+        }
+        valid_defects_query = " OR ".join(
+            f'{reporter} AND issuetype = "{issue_type}"{extra}'
+            for issue_type in ("Defect", "Bug Task")
+        )
+        invalid_defects_query = " OR ".join(
+            f'{reporter} AND issuetype = "{issue_type}"{cancelled_filter}{extra}'
+            for issue_type in ("Defect", "Bug Task")
+        )
+        p0_statuses = '("Completed", "Done", "Accepted", "Closed", "Released", "DEFECT", "Resolved")'
+        p0_team_projects = 'project in ("PF A-Team", "PF B-Hive", "PF Purpose Accelerators", "PF Blackbirds", "PF Deep Divers", "PF Ravens", "PF Scrubbing Bubbles", "PF What\'s Kraken", "PF Problem Management")'
+        p0_common = f'issuetype = "Defect" AND "Priority[Dropdown]" = "P0 - Resolve Immediately" AND status IN {p0_statuses}'
+        p0_defects_query = (
+            f'({p0_team_projects} AND "PF Application" IN (QFX, MyAccount) '
+            f'AND {p0_common} AND "Incident Number" IS NOT EMPTY{extra}) '
+            f'OR (project = "PF Firefighters" AND {p0_common}{extra})'
+        )
+        metric_queries = {
+            "user_stories_total": assigned_metric_queries["user_stories_total"],
+            "valid_defects_total": valid_defects_query,
+            "invalid_defects_total": invalid_defects_query,
+            "p0_defects_total": p0_defects_query,
+        }
 
         queries = {
             "stories_assigned": query(assignee, "Business Story"),
@@ -199,6 +235,9 @@ class JiraService:
         search_links = {
             key: self._jira_search_url(value) for key, value in queries.items()
         }
+        metric_search_links = {
+            key: self._jira_search_url(value) for key, value in metric_queries.items()
+        }
         space_breakdowns = {
             "stories_assigned": self._count_by_space(query(assignee, "Business Story")),
             "defects_assigned": self._count_by_space(query(assignee, "Defect")),
@@ -208,6 +247,10 @@ class JiraService:
             "test_tasks_assigned": self._count_by_space(query(assignee, "Test")),
             "test_plans_assigned": self._count_by_space(query(assignee, "Test Plan")),
             "test_executions_assigned": self._count_by_space(query(assignee, "Test Execution")),
+        }
+        metric_space_breakdowns = {
+            key: self._count_by_space(value.replace(" OR ", " OR "))
+            for key, value in metric_queries.items()
         }
 
         return UserAssignments(
@@ -220,6 +263,12 @@ class JiraService:
             test_tasks_assigned=count(assignee, "Test"),
             test_plans_assigned=count(assignee, "Test Plan"),
             test_executions_assigned=count(assignee, "Test Execution"),
+            user_stories_total=self._search_count(metric_queries["user_stories_total"]),
+            valid_defects_total=self._search_count(metric_queries["valid_defects_total"]),
+            invalid_defects_total=self._search_count(metric_queries["invalid_defects_total"]),
+            p0_defects_total=self._search_count(metric_queries["p0_defects_total"]),
+            metric_search_links=metric_search_links,
+            metric_space_breakdowns=metric_space_breakdowns,
             search_links=search_links,
             space_breakdowns=space_breakdowns,
             queries=queries,
