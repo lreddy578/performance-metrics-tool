@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Performance Metrics — Dashboard</title>
+  <title>Achiever's Scorecard — Dashboard</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
@@ -121,9 +121,20 @@
     .jira-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
               gap:16px;align-items:start}
     .jira-card{background:#fff;border:1px solid #ebecf0;border-radius:10px;
-              padding:18px;text-align:center;min-width:0;overflow:hidden}
+          padding:18px;text-align:center;min-width:0;position:relative}
+    .jira-label-row{display:flex;align-items:center;justify-content:center;gap:5px}
     .jira-card .jira-label{font-size:.85rem;color:#666}
     .jira-card .jira-count{font-size:2rem;font-weight:bold;margin:8px 0}
+    .jira-info{position:relative;display:inline-flex}
+    .jira-info-btn{width:17px;height:17px;border:1px solid #6b778c;border-radius:50%;
+             background:#fff;color:#42526e;cursor:pointer;font-size:11px;font-weight:700;
+             line-height:15px;padding:0}
+    .jira-info-btn:hover,.jira-info-btn[aria-expanded=true]{background:#deebff;
+             border-color:#0052cc;color:#0052cc}
+    .jira-info-popover{position:absolute;z-index:10;top:23px;left:50%;
+               transform:translateX(-50%);width:230px;padding:9px 10px;background:#172b4d;
+               border-radius:5px;color:#fff;font-size:11px;font-weight:400;line-height:1.4;
+               text-align:left;box-shadow:0 4px 12px rgba(9,30,66,.3)}
     .jira-link{color:#0052cc;display:inline-block;font-size:12px;
               font-weight:600;margin-top:4px;text-decoration:none}
     .jira-link:hover{text-decoration:underline}
@@ -221,7 +232,7 @@
     </h1>
   </div>
   <div class="nav-links">
-    <a href="/user" class="nav-link">← My Metrics</a>
+    <a href="/user" class="nav-link" id="myMetricsLink">← My Metrics</a>
     <a href="/jira-assignments" class="nav-link">🎫 My Jira Assignments</a>
     <a href="/admin" class="nav-link" id="adminLink">⚙️ Admin</a>
     <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
@@ -282,7 +293,7 @@
       <div class="tbl-wrap" id="entriesWrap">
       <table>
         <thead>
-          <tr>
+          <tr id="entriesHeader">
             <th onclick="sortBy('_idx')">#</th>
             <th onclick="sortBy('date')">Date &amp; Time (UTC)</th>
             <th onclick="sortBy('user_stories_completed')"
@@ -378,7 +389,7 @@
         <label for="calcRole">Role</label>
         <select id="calcRole" onchange="renderCalculator()">
           <option value="SDET">SDET</option>
-          <option value="Lead Engineer">Lead Engineer</option>
+          <option value="QA Lead">QA Lead</option>
         </select>
       </div>
       <div class="calc-table-wrap">
@@ -416,12 +427,6 @@
   const TOKEN = localStorage.getItem('pm_token')
   if (!TOKEN) window.location.replace('/login')
 
-  // ── 🔧 Keep this in sync with SUPER_VIEWERS in app.py ───────────────────
-  const SUPER_VIEWERS = [
-    'lreddy@teampurpose.com',   // ← add more emails here to match app.py
-  ]
-  // ─────────────────────────────────────────────────────────────────────────
-
   let currentUserId    = null
   let isSuperViewer    = false
   let viewableUsers    = []   // populated from API
@@ -430,12 +435,23 @@
   let sortCol          = 'date'
   let sortDir          = 'desc'
   let selectedEmail    = null
+  let WEIGHTAGE_METRICS = {}
+  let selectedMetricConfig = []
 
   /* ── Boot ── */
   async function boot() {
     const me = await apiGet('/api/auth/me')
+    const roleMetricConfig = await apiGet('/api/metrics/config')
+    WEIGHTAGE_METRICS = Object.fromEntries(
+      Object.entries(roleMetricConfig).map(([role, metrics]) => [
+        role,
+        metrics.map(metric => ({ ...metric, field: metric.name }))
+      ])
+    )
 
-    isSuperViewer = SUPER_VIEWERS.includes(me.email.toLowerCase())
+    isSuperViewer = me.is_super_viewer
+    document.getElementById('myMetricsLink').style.display =
+      isSuperViewer ? 'none' : ''
 
     currentUserId = me.id
     document.getElementById('mgrName').textContent = `— ${me.name}`
@@ -540,6 +556,8 @@
         mgrEl.style.display  = 'none'
       }
       document.getElementById('userChip').classList.add('show')
+      selectedMetricConfig = WEIGHTAGE_METRICS[u.role] || WEIGHTAGE_METRICS.SDET
+      renderEntriesHeader()
     }
 
     selectedEmail = u ? u.email : null
@@ -562,6 +580,16 @@
     button.textContent = collapsed ? '▸' : '▾'
     button.setAttribute('aria-expanded', String(!collapsed))
   }
+
+  function renderEntriesHeader() {
+    document.getElementById('entriesHeader').innerHTML = `
+      <th onclick="sortBy('_idx')">#</th>
+      <th onclick="sortBy('date')">Date &amp; Time (UTC)</th>
+      ${selectedMetricConfig.map(metric =>
+        `<th onclick="sortBy('${metric.name}')" class="num">${metric.label}</th>`
+      ).join('')}
+      <th>Notes</th>`
+  }
   function toggleFilter(button, targetId) {
     const panel = document.getElementById(targetId)
     const collapsed = panel.classList.toggle('collapsed')
@@ -571,29 +599,6 @@
 
   /* ── Weightage calculator ── */
   let currentTotals = null   // totals for the currently selected team member, keyed by field name
-  const WEIGHTAGE_METRICS = {
-    'SDET': [
-      { label:'User Stories completed in a year', target:40, weightage:45, field:'user_stories_completed' },
-      { label:'Valid defects identified in a year', target:80, weightage:18, field:'valid_defects' },
-      { label:'Invalid defects identified in a year', target:5, weightage:-2, field:'invalid_defects' },
-      { label:'Voluntary opportunities in a year', target:5, weightage:5, field:'volunteer_opportunities' },
-      { label:'Defects leaked into production – P0 defects (Hot fix)', target:2, weightage:-15, field:'p0_defects_leaked' },
-      // Future metric: re-enable Complex Stories when it is adopted.
-      // { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
-      { label:'Demo opportunities in a year', target:12, weightage:5, field:'demo_opportunities' }
-    ],
-    'Lead Engineer': [
-      { label:'User Stories completed in a year', target:45, weightage:35, field:'user_stories_completed' },
-      { label:'Valid defects identified in a year', target:95, weightage:13, field:'valid_defects' },
-      { label:'Invalid defects identified in a year', target:3, weightage:-2, field:'invalid_defects' },
-      { label:'Initiatives proposed – for Problem solving', target:4, weightage:10, field:null },
-      { label:'Defects leaked into production – P0 defects (Hot fix)', target:1, weightage:-25, field:'p0_defects_leaked' },
-      // Future metric: re-enable Complex Stories when it is adopted.
-      // { label:'Number of complex stories in a year (Points 8+)', target:12, weightage:10, field:'complex_stories' },
-      { label:'Demo opportunities in a year', target:20, weightage:5, field:'demo_opportunities' }
-    ]
-  }
-
   function openCalculator() {
     matchCalculatorRoleToSelectedEmployee()
     document.getElementById('calcModal').classList.add('open')
@@ -694,10 +699,10 @@
 
   /* ── Inline Jira metrics ── */
   const JIRA_CARDS = [
-    { key:'user_stories_total', label:'User Stories' },
-    { key:'valid_defects_total', label:'Valid Defects' },
-    { key:'invalid_defects_total', label:'Invalid Defects' },
-    { key:'p0_defects_total', label:'P0 Defects' }
+    { key:'user_stories_total', label:'User Stories', info:'Counts the selected user’s assigned tests, test plans, business stories, defects, and bug tasks in completed workflow statuses.' },
+    { key:'valid_defects_total', label:'Valid Defects', info:'Counts defects and bug tasks reported by the selected user. The selected release and date filters are applied.' },
+    { key:'invalid_defects_total', label:'Invalid Defects', info:'Counts defects and bug tasks reported by the selected user with a Cancelled or Canceled status.' },
+    { key:'p0_defects_total', label:'P0 Defects', info:'Counts resolved P0 production defects across the configured team projects. This metric is not filtered by user email.' }
   ]
 
   function clearJiraFilters() {
@@ -739,13 +744,34 @@
   function renderJiraCard(card, data, links, spaces) {
     return `
       <div class="jira-card">
-        <div class="jira-label">${card.label}</div>
+        ${renderJiraInfo(card)}
         <div class="jira-count">${data[card.key] ?? '—'}</div>
         ${renderJiraLink(links[card.key])}
         <button class="jira-toggle" type="button" aria-expanded="false"
                 onclick="toggleJiraSpaces(this)">Show by space</button>
         <div hidden>${renderJiraSpaceDetails(spaces[card.key])}</div>
       </div>`
+  }
+  function renderJiraInfo(card) {
+    return `<div class="jira-label-row">
+      <div class="jira-label">${card.label}</div>
+      <span class="jira-info">
+        <button class="jira-info-btn" type="button" aria-label="How ${card.label} is calculated"
+                aria-expanded="false" title="How this metric is calculated"
+                onclick="toggleJiraInfo(this)">i</button>
+        <span class="jira-info-popover" hidden>${card.info}</span>
+      </span>
+    </div>`
+  }
+  function toggleJiraInfo(button) {
+    const popover = button.nextElementSibling
+    const expanded = button.getAttribute('aria-expanded') === 'true'
+    document.querySelectorAll('.jira-info-popover').forEach(item => { item.hidden = true })
+    document.querySelectorAll('.jira-info-btn').forEach(item => {
+      item.setAttribute('aria-expanded', 'false')
+    })
+    popover.hidden = expanded
+    button.setAttribute('aria-expanded', String(!expanded))
   }
   function renderJiraLink(url) {
     if (!url) return ''
@@ -766,15 +792,9 @@
     details.hidden = expanded
   }
   function updateCurrentTotals(rows) {
-    currentTotals = {
-      user_stories_completed:  total(rows,'user_stories_completed'),
-      valid_defects:           total(rows,'valid_defects'),
-      invalid_defects:         total(rows,'invalid_defects'),
-      p0_defects_leaked:       total(rows,'p0_defects_leaked'),
-      complex_stories:         total(rows,'complex_stories'),
-      volunteer_opportunities: total(rows,'volunteer_opportunities'),
-      demo_opportunities:      total(rows,'demo_opportunities')
-    }
+    currentTotals = Object.fromEntries(selectedMetricConfig.map(metric => [
+      metric.name, total(rows, metric.name)
+    ]))
     refreshCalculatorIfOpen()
   }
   function total(rows,field){
@@ -833,7 +853,7 @@
     const tbody = document.getElementById('tbody')
     if (!rows.length) {
       tbody.innerHTML = `
-        <tr><td colspan="10"
+        <tr><td colspan="${selectedMetricConfig.length + 3}"
                 style="text-align:center;padding:40px;color:#6b778c">
           😕 No entries match your filters.
         </td></tr>`
@@ -847,14 +867,8 @@
             ${(e.timestamp||'').substring(11,19)||'—'}
           </span>
         </td>
-        <td class="num">${fv(e.user_stories_completed)}</td>
-        <td class="num">${fv(e.valid_defects)}</td>
-        <td class="num">${fv(e.invalid_defects)}</td>
-        <td class="num">${fv(e.p0_defects_leaked)}</td>
-        <!-- Future metric: re-enable Complex Stories when it is adopted. -->
-        <!-- <td class="num">${fv(e.complex_stories)}</td> -->
-        <td class="num">${fv(e.volunteer_opportunities)}</td>
-        <td class="num">${fv(e.demo_opportunities)}</td>
+        ${selectedMetricConfig.map(metric =>
+          `<td class="num">${fv(e[metric.name])}</td>`).join('')}
         <td class="note-cell" title="${esc(e.notes)}">
           ${hl(esc(e.notes||''),q)||'—'}
         </td>
@@ -862,17 +876,11 @@
   }
 
   /* ── Totals row ── */
-  const NUMERIC_FIELDS = [
-    'user_stories_completed', 'valid_defects', 'invalid_defects',
-    'p0_defects_leaked',
-    // Future metric: add 'complex_stories' back when it is adopted.
-    'volunteer_opportunities',
-    'demo_opportunities'
-  ]
   function buildTotalsRow(rows) {
     if (!rows.length) return ''
-    const sums = NUMERIC_FIELDS.map(f =>
-      rows.reduce((s, e) => s + (e[f] != null ? e[f] : 0), 0))
+    const sums = selectedMetricConfig.map(metric =>
+      rows.reduce((sum, entry) =>
+        sum + (entry[metric.name] != null ? entry[metric.name] : 0), 0))
     return `
       <tr style="font-weight:700;background:#f4f5f7">
         <td colspan="2">Total</td>

@@ -1,11 +1,11 @@
-# Performance Metrics Tool
+# Achiever's Scorecard
 ## Technology and Solution Design Document
 
 **Prepared:** September 2026
 
 ## 1. Executive Summary
 
-Performance Metrics Tool is a lightweight web application for collecting and reviewing SDET performance metrics. It combines a FastAPI backend, browser-based HTML/CSS/JavaScript pages, JSON file persistence, bearer-token sessions, role-aware views, and Jira assignment metrics.
+Achiever's Scorecard is a lightweight web application for collecting and reviewing SDET performance metrics. It combines a FastAPI backend, browser-based HTML/CSS/JavaScript pages, JSON file persistence, bearer-token sessions, role-aware views, and Jira assignment metrics.
 
 The Jira experience presents numeric counts for stories, defects, bugs, tests, test plans, and test executions. Each card has a Jira search link and an expandable count by project/space. Counts are restricted to Completed, Done, Accepted, Closed, and Released statuses.
 

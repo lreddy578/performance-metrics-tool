@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Performance Metrics — My Data</title>
+  <title>Achiever's Scorecard — My Data</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',sans-serif;background:#f4f5f7;
@@ -139,10 +139,21 @@
     .jira-filter-field label{font-size:12px;color:#6b778c;font-weight:600}
     .jira-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
           gap:16px;align-items:start}
-    .jira-card{background:#fff;border:1px solid #ebecf0;border-radius:10px;
-          padding:18px;text-align:center;min-width:0;overflow:hidden}
+        .jira-card{background:#fff;border:1px solid #ebecf0;border-radius:10px;
+          padding:18px;text-align:center;min-width:0;position:relative}
+        .jira-label-row{display:flex;align-items:center;justify-content:center;gap:5px}
     .jira-card .jira-label{font-size:.85rem;color:#666}
     .jira-card .jira-count{font-size:2rem;font-weight:bold;margin:8px 0}
+        .jira-info{position:relative;display:inline-flex}
+        .jira-info-btn{width:17px;height:17px;border:1px solid #6b778c;border-radius:50%;
+          background:#fff;color:#42526e;cursor:pointer;font-size:11px;font-weight:700;
+          line-height:15px;padding:0}
+        .jira-info-btn:hover,.jira-info-btn[aria-expanded=true]{background:#deebff;
+          border-color:#0052cc;color:#0052cc}
+        .jira-info-popover{position:absolute;z-index:10;top:23px;left:50%;
+          transform:translateX(-50%);width:230px;padding:9px 10px;background:#172b4d;
+          border-radius:5px;color:#fff;font-size:11px;font-weight:400;line-height:1.4;
+          text-align:left;box-shadow:0 4px 12px rgba(9,30,66,.3)}
     .jira-link{color:#0052cc;display:inline-block;font-size:12px;
           font-weight:600;margin-top:4px;text-decoration:none}
     .jira-link:hover{text-decoration:underline}
@@ -166,7 +177,7 @@
 
 <div class="header">
   <div class="header-left">
-    <h1>📊 Performance Metrics</h1>
+    <h1>📊 Achiever's Scorecard</h1>
     <span class="welcome" id="welcomeMsg"></span>
   </div>
   <div class="nav-links">
@@ -262,46 +273,7 @@
     <div class="m-body">
       <div id="mAlert"></div>
       <input type="hidden" id="mEditId"/>
-      <div class="field-grid">
-        <div class="field">
-          <label>User Stories Completed</label>
-          <input type="number" id="m_user_stories_completed"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-        <div class="field">
-          <label>Valid Defects Identified</label>
-          <input type="number" id="m_valid_defects"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-        <div class="field">
-          <label>Invalid Defects Identified</label>
-          <input type="number" id="m_invalid_defects"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-        <div class="field">
-          <label>P0 Defects Leaked</label>
-          <input type="number" id="m_p0_defects_leaked"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-        <!-- Future metric: re-enable Complex Stories when it is adopted. -->
-        <!--
-        <div class="field">
-          <label>Complex Stories (8+ pts)</label>
-          <input type="number" id="m_complex_stories"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-        -->
-        <div class="field">
-          <label>Volunteer Opportunities</label>
-          <input type="number" id="m_volunteer_opportunities"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-        <div class="field">
-          <label>Demo Opportunities</label>
-          <input type="number" id="m_demo_opportunities"
-                 min="0" step="1" placeholder="0"/>
-        </div>
-      </div>
+      <div class="field-grid" id="mFields"></div>
       <div class="field">
         <label>Notes
           <span style="color:#6b778c;font-weight:400">(optional)</span>
@@ -319,16 +291,10 @@
 </div>
 
 <script>
-  const FIELDS = [
-    'user_stories_completed','valid_defects','invalid_defects',
-    'p0_defects_leaked',
-    // Future metric: add 'complex_stories' back when it is adopted.
-    'volunteer_opportunities','demo_opportunities',
-  ]
-
   let currentUserId = null
   let currentUserEmail = null
   let allEntries    = []
+  let metricConfig  = []
 
   /* ── Auth guard ── */
   const TOKEN = localStorage.getItem('pm_token')
@@ -350,18 +316,23 @@
   async function boot() {
     try {
       const me = await apiGet('/api/auth/me')
+      if (me.is_super_viewer) {
+        window.location.replace('/dashboard')
+        return
+      }
       currentUserId = me.id
       currentUserEmail = me.email
+      const roleMetricConfig = await apiGet('/api/metrics/config')
+      metricConfig = roleMetricConfig[me.role] || roleMetricConfig.SDET
+      renderMetricFields()
 
       document.getElementById('welcomeMsg').textContent =
         `Welcome, ${me.name}`
       document.getElementById('loadingMsg').style.display = 'none'
 
-      // Dashboard nav — enabled for all users
-      // (dashboard.html handles role-based content)
       const nav = document.getElementById('dashNav')
-      nav.classList.remove('disabled')
-      nav.title = 'Open Dashboard'
+      const canViewDashboard = me.role === 'Manager' || me.is_super_viewer
+      nav.style.display = canViewDashboard ? '' : 'none'
 
       // ✅ CHANGE 2: Admin button — only visible to admin email
       const ADMIN_EMAIL = 'lreddy@teampurpose.com'
@@ -389,6 +360,19 @@
     document.getElementById('profileCard').style.display   = ''
   }
 
+  function renderMetricFields() {
+    document.getElementById('mFields').innerHTML = metricConfig.map(metric => `
+      <div class="field">
+        <label>${metric.label}</label>
+        <input type="number" id="m_${metric.name}"
+               min="0" step="1" placeholder="0"/>
+      </div>`).join('')
+  }
+
+  function metricNames() {
+    return metricConfig.map(metric => metric.name)
+  }
+
   async function loadEntries() {
     const resp = await apiGet(`/api/metrics/${currentUserId}`)
     allEntries = resp.entries
@@ -401,10 +385,10 @@
   }
 
   const USER_JIRA_CARDS = [
-    { key:'user_stories_total', label:'User Stories' },
-    { key:'valid_defects_total', label:'Valid Defects' },
-    { key:'invalid_defects_total', label:'Invalid Defects' },
-    { key:'p0_defects_total', label:'P0 Defects' }
+    { key:'user_stories_total', label:'User Stories', info:'Counts your assigned tests, test plans, business stories, defects, and bug tasks in completed workflow statuses.' },
+    { key:'valid_defects_total', label:'Valid Defects', info:'Counts defects and bug tasks reported by you. The selected release and date filters are applied.' },
+    { key:'invalid_defects_total', label:'Invalid Defects', info:'Counts defects and bug tasks reported by you with a Cancelled or Canceled status.' },
+    { key:'p0_defects_total', label:'P0 Defects', info:'Counts resolved P0 production defects across the configured team projects. This metric is not filtered by user email.' }
   ]
 
   function toggleUserJiraFilters(button) {
@@ -450,13 +434,36 @@
   function renderUserJiraCard(card, data, links, spaces) {
     return `
       <div class="jira-card">
-        <div class="jira-label">${card.label}</div>
+        ${renderUserJiraInfo(card)}
         <div class="jira-count">${data[card.key] ?? '—'}</div>
         ${links[card.key] ? `<a class="jira-link" href="${links[card.key]}" target="_blank" rel="noopener">Open Jira search</a>` : ''}
         <button class="jira-toggle" type="button" aria-expanded="false"
                 onclick="toggleUserJiraSpaces(this)">Show by space</button>
         <div hidden>${renderUserJiraSpaceDetails(spaces[card.key])}</div>
       </div>`
+  }
+
+  function renderUserJiraInfo(card) {
+    return `<div class="jira-label-row">
+      <div class="jira-label">${card.label}</div>
+      <span class="jira-info">
+        <button class="jira-info-btn" type="button" aria-label="How ${card.label} is calculated"
+                aria-expanded="false" title="How this metric is calculated"
+                onclick="toggleUserJiraInfo(this)">i</button>
+        <span class="jira-info-popover" hidden>${card.info}</span>
+      </span>
+    </div>`
+  }
+
+  function toggleUserJiraInfo(button) {
+    const popover = button.nextElementSibling
+    const expanded = button.getAttribute('aria-expanded') === 'true'
+    document.querySelectorAll('.jira-info-popover').forEach(item => { item.hidden = true })
+    document.querySelectorAll('.jira-info-btn').forEach(item => {
+      item.setAttribute('aria-expanded', 'false')
+    })
+    popover.hidden = expanded
+    button.setAttribute('aria-expanded', String(!expanded))
   }
 
   function renderUserJiraSpaceDetails(rows) {
@@ -496,11 +503,8 @@
         <thead>
           <tr>
             <th>#</th><th>Date &amp; Time (UTC)</th>
-            <th>User Stories</th><th>Valid Defects</th>
-            <th>Invalid Defects</th><th>P0 Leaked</th>
-            <!-- Future metric: re-enable Complex Stories when it is adopted. -->
-            <!-- <th>Complex Stories</th> --><th>Volunteer Opps</th>
-            <th>Demo Opps</th><th>Notes</th><th>Actions</th>
+            ${metricConfig.map(metric => `<th>${metric.label}</th>`).join('')}
+            <th>Notes</th><th>Actions</th>
           </tr>
         </thead><tbody>`
     rows.forEach((e, i) => {
@@ -510,14 +514,8 @@
           <td style="color:#6b778c">${i + 1}</td>
             <td><strong>${e.date || '—'}</strong>
               <span style="color:#6b778c;font-size:12px">${time}</span></td>
-          <td class="num">${fv(e.user_stories_completed)}</td>
-          <td class="num">${fv(e.valid_defects)}</td>
-          <td class="num">${fv(e.invalid_defects)}</td>
-          <td class="num">${fv(e.p0_defects_leaked)}</td>
-          <!-- Future metric: re-enable Complex Stories when it is adopted. -->
-          <!-- <td class="num">${fv(e.complex_stories)}</td> -->
-          <td class="num">${fv(e.volunteer_opportunities)}</td>
-          <td class="num">${fv(e.demo_opportunities)}</td>
+          ${metricConfig.map(metric =>
+            `<td class="num">${fv(e[metric.name])}</td>`).join('')}
           <td class="note-cell"
               title="${esc(e.notes)}">${esc(e.notes)||'—'}</td>
           <td class="actions">
@@ -534,17 +532,10 @@
   }
 
   /* ── Totals row ── */
-  const NUMERIC_FIELDS = [
-    'user_stories_completed', 'valid_defects', 'invalid_defects',
-    'p0_defects_leaked',
-    // Future metric: add 'complex_stories' back when it is adopted.
-    'volunteer_opportunities',
-    'demo_opportunities'
-  ]
   function buildTotalsRow(rows) {
     if (!rows.length) return ''
-    const sums = NUMERIC_FIELDS.map(f =>
-      rows.reduce((s, e) => s + (e[f] != null ? e[f] : 0), 0))
+    const sums = metricNames().map(field =>
+      rows.reduce((sum, entry) => sum + (entry[field] != null ? entry[field] : 0), 0))
     return `
       <tr style="font-weight:700;background:#f4f5f7">
         <td colspan="2">Total</td>
@@ -560,7 +551,7 @@
     document.getElementById('mSubmitBtn').textContent = '💾 Save'
     document.getElementById('mEditId').value          = ''
     document.getElementById('mAlert').innerHTML       = ''
-    FIELDS.forEach(f => {
+    metricNames().forEach(f => {
       document.getElementById('m_' + f).value = ''
     })
     document.getElementById('m_notes').value = ''
@@ -574,7 +565,7 @@
     document.getElementById('mSubmitBtn').textContent = '✔ Update'
     document.getElementById('mEditId').value          = id
     document.getElementById('mAlert').innerHTML       = ''
-    FIELDS.forEach(f => {
+    metricNames().forEach(f => {
       document.getElementById('m_' + f).value =
         e[f] != null ? e[f] : ''
     })
@@ -587,11 +578,11 @@
     const payload = {
       notes: document.getElementById('m_notes').value.trim()
     }
-    FIELDS.forEach(f => {
+    metricNames().forEach(f => {
       const v = document.getElementById('m_' + f).value
       if (v !== '') payload[f] = parseFloat(v)
     })
-    if (!FIELDS.some(f => payload[f] != null)) {
+    if (!metricNames().some(f => payload[f] != null)) {
       showAlert('mAlert','err','⚠️ Enter at least one metric value.')
       return
     }

@@ -8,6 +8,14 @@ SESSIONS_FILE   = Path("data/sessions.json")
 SESSION_TTL_HRS = 8
 _sessions: dict = {}
 
+SUPER_VIEWER_EMAILS = {
+    "jamose@teampurpose.com",
+}
+
+
+def is_super_viewer(user: dict) -> bool:
+    return user.get("email", "").strip().lower() in SUPER_VIEWER_EMAILS
+
 
 def load_sessions():
     global _sessions

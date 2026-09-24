@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Performance Metrics — Login</title>
+  <title>Achiever's Scorecard — Login</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;
@@ -84,7 +84,7 @@
 <div class="card">
   <div class="logo">
     <div class="icon">📊</div>
-    <h1>Performance Metrics</h1>
+    <h1>Achiever's Scorecard</h1>
     <p>Track your work. Own your growth.</p>
   </div>
 
@@ -255,7 +255,7 @@
     try {
       const d = await post('/api/auth/login', { email, password })
       localStorage.setItem('pm_token', d.token)
-      window.location.replace('/user')
+      window.location.replace(d.user.is_super_viewer ? '/dashboard' : '/user')
     } catch(e) {
       showAlert('loginAlert','err','❌ ' + errMsg(e))
     } finally { stopLoading(btn, '🔐 Sign In') }
@@ -292,7 +292,9 @@
       showAlert('registerAlert','ok',
         `✅ Welcome, ${d.user.name}! Redirecting…`)
       localStorage.setItem('pm_token', d.token)
-      setTimeout(() => window.location.replace('/user'), 1200)
+      setTimeout(() => window.location.replace(
+        d.user.is_super_viewer ? '/dashboard' : '/user'
+      ), 1200)
     } catch(e) {
       showAlert('registerAlert','err','❌ ' + errMsg(e))
     } finally { stopLoading(btn,'✨ Create My Account') }

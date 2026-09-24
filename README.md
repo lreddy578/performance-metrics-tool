@@ -1,4 +1,4 @@
-# Performance Metrics Tool
+# Achiever's Scorecard
 
 A FastAPI web app for tracking SDET performance metrics.
 

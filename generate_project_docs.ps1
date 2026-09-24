@@ -34,7 +34,7 @@ $word.Visible = $false
 $doc = $word.Documents.Add()
 
 $title = $doc.Paragraphs.Add()
-$title.Range.Text = 'Performance Metrics Tool'
+$title.Range.Text = "Achiever's Scorecard"
 $title.Range.Style = 'Title'
 $title.Range.InsertParagraphAfter()
 $subtitle = $doc.Paragraphs.Add()
@@ -45,7 +45,7 @@ Add-WordText $doc 'Prepared: September 2026'
 Add-WordText $doc 'Purpose: Provide a complete technical reference for the current application, its Jira integration, operating model, and future direction.'
 
 Add-WordHeading $doc '1. Executive Summary'
-Add-WordText $doc 'Performance Metrics Tool is a lightweight web application for collecting and reviewing SDET performance metrics. It combines a FastAPI backend, browser-based HTML/CSS/JavaScript pages, JSON file persistence, bearer-token sessions, role-aware views, and Jira assignment metrics.'
+Add-WordText $doc "Achiever's Scorecard is a lightweight web application for collecting and reviewing SDET performance metrics. It combines a FastAPI backend, browser-based HTML/CSS/JavaScript pages, JSON file persistence, bearer-token sessions, role-aware views, and Jira assignment metrics."
 Add-WordText $doc 'The current Jira experience presents numeric counts for stories, defects, bugs, tests, test plans, and test executions. Each card has a Jira search link and an expandable count by project/space. Counts are restricted to Completed, Done, Accepted, Closed, and Released statuses.'
 
 Add-WordHeading $doc '2. Objective and Goals'
@@ -229,7 +229,7 @@ $band.Fill.ForeColor.RGB = 0x1F4E79
 $band.Fill.Transparency = 0.04
 $band.Line.Visible = 0
 $main = $slide.Shapes.AddTextbox(1, 65, 130, 820, 100)
-Set-PptText $main 'Performance Metrics Tool' 40 $true
+Set-PptText $main "Achiever's Scorecard" 40 $true
 $main.TextFrame.TextRange.Font.Color.RGB = 0xFFFFFF
 $sub = $slide.Shapes.AddTextbox(1, 68, 250, 780, 100)
 Set-PptText $sub 'Objective, current design, vision and support needed' 25 $false

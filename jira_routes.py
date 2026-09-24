@@ -17,7 +17,7 @@ def _authorized_user(authorization: str | None, requested_email: str) -> dict:
 
     requested = requested_email.strip().lower()
     own_email = current_user.get("email", "").lower()
-    if requested == own_email or own_email == "lreddy@teampurpose.com":
+    if requested == own_email or auth_utils.is_super_viewer(current_user):
         return current_user
     if current_user.get("role") == "Manager":
         reportee_emails = {

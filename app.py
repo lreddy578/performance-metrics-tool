@@ -6,7 +6,7 @@ import requests as http_requests
 
 import storage
 import auth as auth_utils
-from metrics_service import METRICS_CONFIG, METRIC_NAMES
+from metrics_service import ROLE_METRICS_CONFIG, get_metrics_for_role
 from models import (UserCreate, UserUpdate, LoginRequest,
                     RegisterRequest, SetPasswordRequest,
                     JiraAuthRequest,
@@ -22,22 +22,14 @@ RESET_TOKENS: dict = {}
 
 load_dotenv()
 
-# ── Super Viewers — director-level access, can see ALL users' data ──────────
-# 🔧 ADD EMAILS HERE for anyone who should see everyone's metrics
-# Keep this list in sync with SUPER_VIEWERS in dashboard.html
-SUPER_VIEWERS = [
-    "JAmose@teampurpose.com",   # ← add more emails below as needed
-    # "director@company.com",
-]
-
 def is_super_viewer(user: dict) -> bool:
-    return user.get("email", "").lower() in [e.lower() for e in SUPER_VIEWERS]
+    return auth_utils.is_super_viewer(user)
 # ─────────────────────────────────────────────────────────────────────────────
 
 storage.init_storage()
 auth_utils.load_sessions()
 
-app = FastAPI(title="Performance Metrics Tool", version="7.0.0")
+app = FastAPI(title="Achiever's Scorecard", version="7.0.0")
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 app.include_router(jira_router)
 
@@ -161,7 +153,9 @@ def register(req: RegisterRequest):
         manager_email=req.manager_email.strip().lower()  # ← NEW
     )
     token = auth_utils.create_session(user["id"])
-    return {"token": token, "user": safe_user(user)}
+    response_user = safe_user(user)
+    response_user["is_super_viewer"] = is_super_viewer(user)
+    return {"token": token, "user": response_user}
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest):
@@ -178,7 +172,9 @@ def login(req: LoginRequest):
         raise HTTPException(status_code=401,
                             detail="Invalid email or password.")
     token = auth_utils.create_session(user["id"])
-    return {"token": token, "user": safe_user(user)}
+    response_user = safe_user(user)
+    response_user["is_super_viewer"] = is_super_viewer(user)
+    return {"token": token, "user": response_user}
 
 @app.post("/api/auth/logout")
 def logout(authorization: str = Header(default=None)):
@@ -190,6 +186,7 @@ def logout(authorization: str = Header(default=None)):
 def me(current_user: dict = Depends(get_current_user)):
     out = safe_user(current_user)
     out["entry_count"] = storage.get_user_entry_count(current_user["id"])
+    out["is_super_viewer"] = is_super_viewer(current_user)
     return out
 
 @app.post("/api/auth/forgot-password")
@@ -451,7 +448,7 @@ def get_dashboard_users(
 
 @app.get("/api/metrics/config")
 def get_config():
-    return METRICS_CONFIG
+    return ROLE_METRICS_CONFIG
 
 
 # ── Metrics (protected — own data only) ───────────────────────────────────
@@ -490,8 +487,9 @@ def add_entry(user_id: int, req: MetricEntryCreate,
         raise HTTPException(status_code=404, detail="User not found.")
     payload = req.dict()
     notes   = payload.pop("notes", "")
+    role_metric_names = {metric["name"] for metric in get_metrics_for_role(user["role"])}
     metrics = {k: v for k, v in payload.items()
-               if k in METRIC_NAMES and v is not None}
+               if k in role_metric_names and v is not None}
     if not metrics:
         raise HTTPException(status_code=400,
             detail="Enter at least one metric value.")
@@ -504,14 +502,17 @@ def update_entry_route(user_id: int, entry_id: int,
     if current_user["id"] != user_id:
         raise HTTPException(status_code=403,
             detail="You can only edit your own metrics.")
-    entry = storage.get_entry_by_id(entry_id)
+    entry = storage.get_entry_by_id(user_id, entry_id)
     if not entry or entry["user_id"] != user_id:
         raise HTTPException(status_code=404, detail="Entry not found.")
     payload = req.dict()
     notes   = payload.pop("notes", "")
+    role_metric_names = {
+        metric["name"] for metric in get_metrics_for_role(current_user["role"])
+    }
     metrics = {k: v for k, v in payload.items()
-               if k in METRIC_NAMES and v is not None}
-    return storage.update_entry(entry_id, metrics, notes)
+               if k in role_metric_names and v is not None}
+    return storage.update_entry(user_id, entry_id, metrics, notes)
 
 @app.delete("/api/metrics/{user_id}/{entry_id}")
 def delete_entry_route(user_id: int, entry_id: int,
@@ -519,8 +520,8 @@ def delete_entry_route(user_id: int, entry_id: int,
     if current_user["id"] != user_id:
         raise HTTPException(status_code=403,
             detail="You can only delete your own metrics.")
-    entry = storage.get_entry_by_id(entry_id)
+    entry = storage.get_entry_by_id(user_id, entry_id)
     if not entry or entry["user_id"] != user_id:
         raise HTTPException(status_code=404, detail="Entry not found.")
-    storage.delete_entry(entry_id)
+    storage.delete_entry(user_id, entry_id)
     return {"success": True}

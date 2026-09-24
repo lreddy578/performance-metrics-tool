@@ -15,13 +15,13 @@ def init_storage():
     if not USERS_FILE.exists():
         _write(USERS_FILE, {"next_id": 1, "users": {}})
     if not METRICS_FILE.exists():
-        _write(METRICS_FILE, {"next_id": 1, "entries": {}})
+        _write(METRICS_FILE, {"next_id": 1, "entries_by_user": {}})
     _run_migrations()
     print("  ✅ Storage ready.")
 
 
 def _run_migrations():
-    """Safely add new fields to existing user records."""
+    """Safely migrate persisted user and metric data."""
     with _lock:
         data    = _read(USERS_FILE)
         changed = False
@@ -32,6 +32,18 @@ def _run_migrations():
         if changed:
             _write(USERS_FILE, data)
             print("  ✅ Migration: added manager_email to existing users.")
+
+        metrics_data = _read(METRICS_FILE)
+        if "entries" in metrics_data:
+            entries_by_user = {}
+            for entry_id, entry in metrics_data["entries"].items():
+                user_entries = entries_by_user.setdefault(str(entry["user_id"]), {})
+                user_entries[entry_id] = entry
+            _write(METRICS_FILE, {
+                "next_id": metrics_data.get("next_id", 1),
+                "entries_by_user": entries_by_user,
+            })
+            print("  ✅ Migration: grouped metric entries by user.")
 
 
 def _read(path: Path) -> dict:
@@ -129,18 +141,14 @@ def delete_user(user_id: int) -> bool:
         del udata["users"][str(user_id)]
         _write(USERS_FILE, udata)
         mdata = _read(METRICS_FILE)
-        to_del = [k for k, e in mdata["entries"].items()
-                  if e["user_id"] == user_id]
-        for k in to_del:
-            del mdata["entries"][k]
+        mdata["entries_by_user"].pop(str(user_id), None)
         _write(METRICS_FILE, mdata)
         return True
 
 
 def get_user_entry_count(user_id: int) -> int:
     data = _read(METRICS_FILE)
-    return sum(1 for e in data["entries"].values()
-               if e["user_id"] == user_id)
+    return len(data["entries_by_user"].get(str(user_id), {}))
 
 
 # ── Jira Auth ──────────────────────────────────────────────────────────────
@@ -200,12 +208,12 @@ def get_reportees(manager_id: int) -> list:
 
 def get_entries_by_user(user_id: int) -> list:
     data = _read(METRICS_FILE)
-    return [e for e in data["entries"].values()
-            if e["user_id"] == user_id]
+    return list(data["entries_by_user"].get(str(user_id), {}).values())
 
 
-def get_entry_by_id(entry_id: int) -> dict | None:
-    return _read(METRICS_FILE)["entries"].get(str(entry_id))
+def get_entry_by_id(user_id: int, entry_id: int) -> dict | None:
+    data = _read(METRICS_FILE)
+    return data["entries_by_user"].get(str(user_id), {}).get(str(entry_id))
 
 
 def create_entry(user_id: int, metrics: dict,
@@ -222,31 +230,31 @@ def create_entry(user_id: int, metrics: dict,
             **metrics,
             "notes":     notes,
         }
-        data["entries"][str(eid)] = entry
-        data["next_id"]           = eid + 1
+        data["entries_by_user"].setdefault(str(user_id), {})[str(eid)] = entry
+        data["next_id"] = eid + 1
         _write(METRICS_FILE, data)
         return entry
 
 
-def update_entry(entry_id: int, metrics: dict,
+def update_entry(user_id: int, entry_id: int, metrics: dict,
                  notes: str = "") -> dict | None:
     with _lock:
         data  = _read(METRICS_FILE)
-        entry = data["entries"].get(str(entry_id))
+        entry = data["entries_by_user"].get(str(user_id), {}).get(str(entry_id))
         if not entry:
             return None
         entry.update({**metrics, "notes": notes,
                       "updated_at": datetime.utcnow().isoformat()})
-        data["entries"][str(entry_id)] = entry
         _write(METRICS_FILE, data)
         return entry
 
 
-def delete_entry(entry_id: int) -> bool:
+def delete_entry(user_id: int, entry_id: int) -> bool:
     with _lock:
         data = _read(METRICS_FILE)
-        if str(entry_id) not in data["entries"]:
+        entries = data["entries_by_user"].get(str(user_id), {})
+        if str(entry_id) not in entries:
             return False
-        del data["entries"][str(entry_id)]
+        del entries[str(entry_id)]
         _write(METRICS_FILE, data)
         return True

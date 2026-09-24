@@ -47,6 +47,7 @@ class MetricEntryCreate(BaseModel):
     p0_defects_leaked:       Optional[float] = None
     complex_stories:         Optional[float] = None
     volunteer_opportunities: Optional[float] = None
+    initiatives_proposed:    Optional[float] = None
     demo_opportunities:      Optional[float] = None
     notes:                   str = ""
 
